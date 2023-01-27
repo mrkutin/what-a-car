@@ -1,0 +1,67 @@
+version: "3.9"
+services:
+  api:
+    build:
+      context: services/api-gateway/
+    image: itlaboratory/what-a-car-api
+    ports:
+      - 3000:3000
+    depends_on:
+      - sravni
+      - autoins
+      - gibdd
+      - redis
+    environment:
+      SRAVNI_HOST: http://sravni:8110
+      AUTOINS_HOST: http://autoins:8100
+      GIBDD_HOST: http://gibdd:8090
+      REDIS_HOST: redis://redis:6379
+  sravni:
+    build:
+      context: services/sravni/
+    image: itlaboratory/sravni
+    ports:
+      - 8110:8110
+  autoins:
+    build:
+      context: services/autoins/
+    image: itlaboratory/autoins
+    ports:
+      - 8100:8100
+  gibdd-captcha-solver:
+    build:
+      context: ./services/gibdd-captcha-solver/
+    image: itlaboratory/gibdd-captcha-solver
+    ports:
+      - 8080:8080
+  gibdd:
+    build:
+      context: ./services/gibdd/
+    image: itlaboratory/gibdd
+    ports:
+      - 8090:8090
+    depends_on:
+      - gibdd-captcha-solver
+    environment:
+      CAPTCHA_SOLVER_URL: http://gibdd-captcha-solver:8080
+  redis:
+    image: redis/redis-stack
+    ports:
+      - 6379:6379
+      - 8001:8001
+#  mongo:
+#    image: mongo
+##    restart: always
+#    env_file:
+#      - .env
+#    ports:
+#      - 27017:27017
+#  mongo-express:
+#    image: mongo-express
+##    restart: always
+#    ports:
+#      - 8082:8081 #host:container
+#    environment:
+#      ME_CONFIG_MONGODB_ADMINUSERNAME: root
+#      ME_CONFIG_MONGODB_ADMINPASSWORD: root
+#      ME_CONFIG_MONGODB_URL: mongodb://root:root@mongo:27017/

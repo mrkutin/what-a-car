@@ -1,0 +1,44 @@
+import headers from './headers.mjs'
+//todo check double win
+
+const getInsuranceByVin = async (page, vin) => {
+    try {
+        await page.waitForSelector('#tsBlockTab', {timeout: 5000})
+        await page.click('#tsBlockTab')
+
+        await page.focus('#vin')
+        await page.keyboard.type(vin)
+
+        await page.click('#buttonFind')
+
+        await page.waitForNavigation()
+
+        const texts = await page.evaluate(() => Array.from(document.querySelectorAll('tr.data-row > td')).map(el => el.innerText))
+
+        await page.waitForSelector('#buttonBack')
+        await page.click('#buttonBack')
+
+        const flattenedTexts = texts.map(el => el.split('\n').map(el => {
+            const split = el.split('\t')
+            return split[1] || split[0]
+        })).flat(2)
+
+        if(!flattenedTexts.length)
+            return {}
+
+        const autoins = flattenedTexts.reduce((acc, text, idx) => {
+            acc[headers[idx]] = text
+            return acc
+        }, {})
+
+        return autoins
+    } catch (e) {
+        console.log(e.message)
+        return {}
+    }
+}
+
+// const insurance = await getInsuranceByPlate(null, 'м506ур77')
+// console.log(insurance)
+
+export {getInsuranceByVin}

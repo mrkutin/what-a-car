@@ -1,0 +1,23 @@
+{
+  "name": "autoins",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.mjs",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "fastify": "^4.12.0",
+    "install": "^0.13.0",
+    "npm": "^9.1.2",
+    "puppeteer": "^19.3.0",
+    "puppeteer-autoscroll-down": "^1.1.1",
+    "puppeteer-extra": "^3.3.4",
+    "puppeteer-extra-plugin-session": "^1.0.1",
+    "puppeteer-extra-plugin-stealth": "^2.11.1"
+  }
+}

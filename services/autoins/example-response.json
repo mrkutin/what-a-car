@@ -1,0 +1,20 @@
+{
+  "row": "1",
+  "policyId": "ХХХ 0278816427",
+  "company": "АО \"АльфаСтрахование\"",
+  "status": "Действует",
+  "policyTerm": "Период использования ТС активен на запрашиваемую дату",
+  "makeAndModel": "Rolls-Royce Phantom (категория «B»)",
+  "licensePlate": "А777МР77",
+  "vin": "SCA1S68496UX08040",
+  "powerHp": "460.00",
+  "vehicleInTransit": "Нет",
+  "trailerAllowed": "Нет",
+  "usingPurpose": "Личная",
+  "hasRestrictions": "Не ограничен список лиц, допущенных к управлению",
+  "policyHolder": "П***** ВЯЧЕСЛАВ ВИКТОРОВИЧ 27.07.1972",
+  "vehicleOwner": "П***** ВЯЧЕСЛАВ ВИКТОРОВИЧ 27.07.1972",
+  "KBM": "1.17",
+  "region": "г Москва",
+  "premium": "44176.53 руб."
+}
