@@ -58,7 +58,7 @@ services:
     volumes:
       - redis-data:/data
     environment:
-      REDIS_ARGS: --save 60 1
+      REDIS_ARGS: --save 60 1 --notify-keyspace-events KEA
   mongo:
     image: mongo
     restart: unless-stopped
