@@ -4,6 +4,7 @@ services:
     build:
       context: services/api-gateway/
     image: itlaboratory/what-a-car-api
+    restart: unless-stopped
     ports:
       - 3000:3000
     depends_on:
@@ -20,24 +21,28 @@ services:
     build:
       context: services/sravni/
     image: itlaboratory/sravni
+    restart: unless-stopped
     ports:
       - 8110:8110
   autoins:
     build:
       context: services/autoins/
     image: itlaboratory/autoins
+    restart: unless-stopped
     ports:
       - 8100:8100
   gibdd-captcha-solver:
     build:
       context: ./services/gibdd-captcha-solver/
     image: itlaboratory/gibdd-captcha-solver
+    restart: unless-stopped
     ports:
       - 8080:8080
   gibdd:
     build:
       context: ./services/gibdd/
     image: itlaboratory/gibdd
+    restart: unless-stopped
     ports:
       - 8090:8090
     depends_on:
@@ -46,6 +51,7 @@ services:
       CAPTCHA_SOLVER_URL: http://gibdd-captcha-solver:8080
   redis:
     image: redis/redis-stack
+    restart: unless-stopped
     ports:
       - 6379:6379
       - 8001:8001
@@ -53,21 +59,27 @@ services:
       - redis-data:/data
     environment:
       REDIS_ARGS: --save 60 1
+  mongo:
+    image: mongo
+    restart: unless-stopped
+    ports:
+      - 27017:27017
+    volumes:
+      - mongo-data:/data
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: root
+  mongo-express:
+    image: mongo-express
+    restart: unless-stopped
+    ports:
+      - 8081:8081
+    depends_on:
+      - mongo
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: root
+      ME_CONFIG_MONGODB_ADMINPASSWORD: root
+      ME_CONFIG_MONGODB_URL: mongodb://root:root@mongo:27017/
 volumes:
   redis-data:
-#  mongo:
-#    image: mongo
-##    restart: always
-#    env_file:
-#      - .env
-#    ports:
-#      - 27017:27017
-#  mongo-express:
-#    image: mongo-express
-##    restart: always
-#    ports:
-#      - 8082:8081 #host:container
-#    environment:
-#      ME_CONFIG_MONGODB_ADMINUSERNAME: root
-#      ME_CONFIG_MONGODB_ADMINPASSWORD: root
-#      ME_CONFIG_MONGODB_URL: mongodb://root:root@mongo:27017/
+  mongo-data:
