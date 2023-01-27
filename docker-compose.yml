@@ -1,5 +1,16 @@
 version: "3.9"
 services:
+  storage:
+    build:
+      context: services/storage/
+    image: itlaboratory/what-a-car-storage
+    restart: unless-stopped
+    depends_on:
+      - mongo
+      - redis
+    environment:
+      REDIS_HOST: redis://redis:6379
+      MONGO_HOST: mongodb://root:root@mongo:27017
   api:
     build:
       context: services/api-gateway/
@@ -20,28 +31,28 @@ services:
   sravni:
     build:
       context: services/sravni/
-    image: itlaboratory/sravni
+    image: itlaboratory/what-a-car-sravni
     restart: unless-stopped
     ports:
       - 8110:8110
   autoins:
     build:
       context: services/autoins/
-    image: itlaboratory/autoins
+    image: itlaboratory/what-a-car-autoins
     restart: unless-stopped
     ports:
       - 8100:8100
   gibdd-captcha-solver:
     build:
       context: ./services/gibdd-captcha-solver/
-    image: itlaboratory/gibdd-captcha-solver
+    image: itlaboratory/what-a-car-gibdd-captcha-solver
     restart: unless-stopped
     ports:
       - 8080:8080
   gibdd:
     build:
       context: ./services/gibdd/
-    image: itlaboratory/gibdd
+    image: itlaboratory/what-a-car-gibdd
     restart: unless-stopped
     ports:
       - 8090:8090
