@@ -4,7 +4,7 @@ services:
     build:
       context: services/storage/
     image: itlaboratory/what-a-car-storage
-    restart: unless-stopped
+    restart: on-failure
     depends_on:
       - mongo
       - redis
@@ -15,7 +15,7 @@ services:
     build:
       context: services/api-gateway/
     image: itlaboratory/what-a-car-api
-    restart: unless-stopped
+    restart: on-failure
     ports:
       - 3000:3000
     depends_on:
@@ -32,28 +32,28 @@ services:
     build:
       context: services/sravni/
     image: itlaboratory/what-a-car-sravni
-    restart: unless-stopped
+    restart: on-failure
     ports:
       - 8110:8110
   autoins:
     build:
       context: services/autoins/
     image: itlaboratory/what-a-car-autoins
-    restart: unless-stopped
+    restart: on-failure
     ports:
       - 8100:8100
   gibdd-captcha-solver:
     build:
       context: ./services/gibdd-captcha-solver/
     image: itlaboratory/what-a-car-gibdd-captcha-solver
-    restart: unless-stopped
+    restart: on-failure
     ports:
       - 8080:8080
   gibdd:
     build:
       context: ./services/gibdd/
     image: itlaboratory/what-a-car-gibdd
-    restart: unless-stopped
+    restart: on-failure
     ports:
       - 8090:8090
     depends_on:
@@ -62,7 +62,7 @@ services:
       CAPTCHA_SOLVER_URL: http://gibdd-captcha-solver:8080
   redis:
     image: redis/redis-stack
-    restart: unless-stopped
+    restart: on-failure
     ports:
       - 6379:6379
       - 8001:8001
@@ -72,7 +72,7 @@ services:
       REDIS_ARGS: --save 60 1 --notify-keyspace-events KEA
   mongo:
     image: mongo
-    restart: unless-stopped
+    restart: on-failure
     ports:
       - 27017:27017
     volumes:
@@ -82,7 +82,7 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: root
   mongo-express:
     image: mongo-express
-    restart: unless-stopped
+    restart: on-failure
     ports:
       - 8081:8081
     depends_on:
