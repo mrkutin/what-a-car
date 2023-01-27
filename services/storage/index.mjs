@@ -3,7 +3,9 @@ const REDIS_HOST = process.env.REDIS_HOST || 'redis://0.0.0.0:6379'
 
 import {createClient} from 'redis'
 
-const redisClient = createClient()
+const redisClient = createClient({
+    url: REDIS_HOST
+})
 const redisSubscriber = redisClient.duplicate()
 
 import {MongoClient} from 'mongodb'
@@ -13,13 +15,9 @@ const mongoDb = mongoClient.db('what-a-car')
 const collection = mongoDb.collection('plates')
 await collection.createIndex({plate: 1})
 
-await redisClient.connect({
-    url: REDIS_HOST
-})
+await redisClient.connect()
 redisClient.on('error', (err) => console.log('Redis Client Error', err))
-await redisSubscriber.connect({
-    url: REDIS_HOST
-})
+await redisSubscriber.connect()
 redisSubscriber.on('error', (err) => console.log('Redis Subscriber Error', err))
 
 await redisSubscriber.pSubscribe('__keyevent*__:*', async (key) => {
