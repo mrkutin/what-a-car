@@ -1,26 +1,9 @@
-const SRAVNI_HOST = process.env.SRAVNI_HOST || 'http://0.0.0.0:8110'
-const AUTOINS_HOST = process.env.AUTOINS_HOST || 'http://0.0.0.0:8100'
-const GIBDD_HOST = process.env.GIBDD_HOST || 'http://0.0.0.0:8090'
-const REDIS_HOST = process.env.REDIS_HOST || 'redis://0.0.0.0:6379'
-
 import Fastify from 'fastify'
 
 const fastify = new Fastify({logger: true})
-import axios from 'axios'
+import {collectByPlate} from './collectInfo.mjs'
 
-import {createClient} from 'redis'
-
-const redisClient = createClient({
-    url: REDIS_HOST
-})
-try{
-    await redisClient.connect()
-} catch (e) {
-    console.log(e.message)
-}
-redisClient.on('error', (err) => console.log('Redis Client Error', err))
-
-const letterMap = {
+const en2ruMap = {
     'A': 'А',
     'B': 'В',
     'E': 'Е',
@@ -34,7 +17,20 @@ const letterMap = {
     'Y': 'У',
     'X': 'Х'
 }
-
+const ru2enMap = {
+    'А': 'A',
+    'В': 'B',
+    'Е': 'E',
+    'К': 'K',
+    'М': 'M',
+    'Н': 'H',
+    'О': 'O',
+    'Р': 'P',
+    'С': 'C',
+    'Т': 'T',
+    'У': 'Y',
+    'Х': 'X'
+}
 
 // const authenticate = async (req, res, done) => {
 //     if(req.headers.authorization !== `Bearer ${process.env.API_TOKEN}`){
@@ -45,87 +41,60 @@ const letterMap = {
 //     done()
 // }
 
-const retryGetRequest = async (url, maxRetries, retries = 0) => {
-    let result = null
-
-    if (retries < maxRetries) {
-        result = await axios.get(url)
-            .catch(e => {
-                retries++
-                retryGetRequest(url, maxRetries, retries)
-                console.log(e.message)
-            })
-    }
-    return result
-}
 
 fastify.route({
     method: 'GET',
-    url: '/api/plates/:plate',
+    url: '/api/:id',
     //preHandler: authenticate,
-    handler: async (req) => {
-        const plate = req.params.plate.split('').map(letter => letterMap[letter.toUpperCase()] || letter.toUpperCase()).join('')
+    handler: async (req, res) => {
+        const id = req.params.id.toUpperCase()
+        const plate = id.split('').map(letter => en2ruMap[letter] || letter).join('')
+        const vin = id.split('').map(letter => ru2enMap[letter] || letter).join('')
 
-        const sravniPromise = (redisClient.isReady ? redisClient.json.get(`sravni:${plate}`) : Promise.resolve(null))
-            .then(async json => {
-                if (json) {
-                    return json
-                }
-                try {
-                    const res = await retryGetRequest(`${SRAVNI_HOST}/plates/${plate}`, 2)
-                    const json = res.data
-                    if(json){
-                        await redisClient.json.set(`sravni:${plate}`, '$', json)
-                    }
-                    //todo expire
-                    return json
-                } catch (e) {
-                    return null
-                }
-            })
+        let data = null
 
-        const autoinsPromise = (redisClient.isReady ? redisClient.json.get(`autoins:${plate}`) : Promise.resolve(null))
-            .then(async json => {
-                if (json) {
-                    return json
-                }
-                try {
-                    const res = await retryGetRequest(`${AUTOINS_HOST}/plates/${plate}`, 2)
-                    const json = res.data
-                    if(json){
-                        await redisClient.json.set(`autoins:${plate}`, '$', json)
-                    }
-                    //todo expire
-                    return json
-                } catch (e) {
-                    return null
-                }
-            })
+        if (
+            plate.match(/^[АВЕКМНОРСТУХ]\d{3}(?<!000)[АВЕКМНОРСТУХ]{2}\d{2,3}$/ui) //обычный номер
+            || plate.match(/^[АВЕКМНОРСТУХ]{2}\d{3}(?<!000)\d{2,3}$/ui) //такси
+            || plate.match(/^[АВЕКМНОРСТУХ]{2}\d{4}(?<!0000)\d{2,3}$/ui) //прицеп
+            || plate.match(/^\d{4}(?<!0000)[АВЕКМНОРСТУХ]{2}\d{2,3}$/ui) //мотоцикл
+            || plate.match(/^[АВЕКМНОРСТУХ]{2}\d{3}(?<!000)[АВЕКМНОРСТУХ]\d{2,3}$/ui) //транзит
+            || plate.match(/^Т[АВЕКМНОРСТУХ]{2}\d{3}(?<!000)\d{2,3}$/ui) //выездной
+        ) {
+            data = await collectByPlate(plate)
+        } else if (vin.match(/^[A-Z0-9]{17}$/g)) {
+            data = null//todo collectByVin
+            return 'Это VIN'
+        }
 
-        const [autoins, sravni] = await Promise.all([autoinsPromise, sravniPromise])
+        if (!data) {
+            return res.code(400).type('text/plain').send('bad request')
+        }
 
-        const vin = autoins?.vin || sravni?.vin
-        const gibddPromise = (redisClient.isReady ? redisClient.json.get(`gibdd:${plate}`) : Promise.resolve(null))
-            .then(async json => {
-                if (json) {
-                    return json
-                }
-                try {
-                    const res = await retryGetRequest(`${GIBDD_HOST}/vins/${vin}`, 2)
-                    const json = res.data
-                    if(json){
-                        await redisClient.json.set(`gibdd:${plate}`, '$', json)
-                    }
-                    //todo expire
-                    return json
-                } catch (e) {
-                    return null
-                }
-            })
+        const {sravni, gibdd, autoins} = data
+        const lastOwnership = gibdd.ownershipPeriods?.[gibdd.ownershipPeriods.length - 1]
 
-        const gibdd = await gibddPromise
+        const output = []
 
-        return {autoins: autoins || {}, sravni: sravni || {}, gibdd: gibdd || {}}
+        output.push(`Гос. номер: ${autoins.licensePlate || sravni.carNumber || ''}`)
+        output.push(`VIN: ${autoins.vin || sravni.vin || gibdd.vehicle?.vin || ''}`)
+        output.push(`ПТС: ${gibdd.vehiclePassport ? `${gibdd.vehiclePassport.number || ''} ${gibdd.vehiclePassport.issue || ''}` : ''}`)
+        sravni?.carDocument?.documentType?.toLowerCase() === 'sts' && output.push(`СТС: ${sravni.carDocument.series} ${sravni.carDocument.number}, выдан ${sravni.carDocument.date.substring(0, 10)}`)
+        output.push(`Название: ${gibdd.vehicle?.model || autoins.makeAndModel || `${sravni.brand?.name} ${sravni.model?.name}` || ''}`)
+        output.push(`Категория: ${gibdd.vehicle?.category || ''}`)
+        output.push(`Цвет: ${gibdd.vehicle?.color || ''}`)
+        output.push(`Объем двигателя: ${gibdd.vehicle?.engineVolume || ''} куб. см`)
+        output.push(`Мощность: ${autoins.powerHp || gibdd.vehicle?.powerHp || ''} л.с.`)
+        output.push(`Год выпуска: ${gibdd.vehicle?.year || sravni.year || ''}`)
+        output.push(`Кол-во собстенников по ПТС: ${Math.ceil(gibdd.ownershipPeriods?.length / 2) || ''}`)
+        output.push(`Последний срок владения: ${lastOwnership ? `${lastOwnership.from} - ${lastOwnership.to || 'наст. время'}` : ''}`)
+        autoins && output.push(`Полис ОСАГО: ${autoins.policyId} ${autoins.company} ${autoins.status}, ${autoins.hasRestrictions || ''}, собственник: ${autoins.vehicleOwner}, страхователь: ${autoins.policyHolder}, КБМ: ${autoins.KBM}, регион: ${autoins.region}, страховая премия: ${autoins.premium}`)
+        sravni?.brand && output.push(`Риск угона: ${sravni?.brand.isPopular ? 'высокий' : 'низкий'}`)
+        gibdd.accidents?.forEach(async accident => {
+            output.push(`ДТП: ${accident.AccidentDateTime}, ${accident.AccidentPlace}, ${accident.AccidentType}, кол-во участников: ${accident.VehicleAmount}`)
+        })
+
+        return output
     }
 })
 
