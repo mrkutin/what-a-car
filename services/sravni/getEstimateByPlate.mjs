@@ -48,7 +48,7 @@ const getEstimateByPlate = async (plate) => {
     } catch (e) {
         await browser.close()
         console.log(e)
-        return {}
+        return null
     }
 }
 

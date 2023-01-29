@@ -92,7 +92,7 @@ const collectByPlate = async plate => {
 
     const gibdd = await gibddPromise
 
-    return {autoins: autoins || {}, sravni: sravni || {}, gibdd: gibdd || {}}
+    return {autoins, sravni, gibdd}
 }
 
 export {collectByPlate}

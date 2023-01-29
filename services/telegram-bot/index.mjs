@@ -24,11 +24,14 @@ const bot = new Telegraf(TELEGRAM_BOT_TOKEN)
 //todo use split() in a new service "decodeVin"
 
 bot.start((ctx) => ctx.reply('Привет, это бот "Что за тачка?"\nДля проверки тачки отправь её номер'))
+
+//todo bot.telegram.sendMessage()
 bot.on('text', async (ctx) => {
     const {update} = ctx
     const {message} = update
     const {from, text} = message
     const {is_bot} = from
+
 
     if (is_bot) {
         return ctx.reply('Опять бот! А хочется простого человеческого общения...')

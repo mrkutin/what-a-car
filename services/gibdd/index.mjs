@@ -23,6 +23,10 @@ fastify.route({
         const vin = req.params.vin
 
         const history = await getHistoryByVin(vin)
+        if(!history){
+            return null
+        }
+
         const accidents = await getAccidentsByVin(vin)
         const wanted = await getWantedByVin(vin)
         const restrictions = await getRestrictionsByVin(vin)

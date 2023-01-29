@@ -1,5 +1,4 @@
 import headers from './headers.mjs'
-//todo check double win
 
 const getInsuranceByPlate = async (page, plate) => {
     try {
@@ -24,9 +23,13 @@ const getInsuranceByPlate = async (page, plate) => {
         })).flat(2)
 
         if(!flattenedTexts.length)
-            return {}
+            return null
 
-        const autoins = flattenedTexts.reduce((acc, text, idx) => {
+        if(flattenedTexts[7] === flattenedTexts[8]){//to remove duplicate vins
+            flattenedTexts.splice(8, 1)
+        }
+
+        const autoins = uniqueFlatText.reduce((acc, text, idx) => {
             acc[headers[idx]] = text
             return acc
         }, {})
@@ -34,7 +37,7 @@ const getInsuranceByPlate = async (page, plate) => {
         return autoins
     } catch (e) {
         console.log(e.message)
-        return {}
+        return null
     }
 }
 

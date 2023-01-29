@@ -19,9 +19,9 @@ services:
     ports:
       - 3000:3000
     depends_on:
-      - sravni
-      - autoins
-      - gibdd
+#      - sravni
+#      - autoins
+#      - gibdd
       - redis
     environment:
       SRAVNI_HOST: http://sravni:8110

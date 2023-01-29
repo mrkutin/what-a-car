@@ -17,7 +17,6 @@
     "puppeteer": "^19.3.0",
     "puppeteer-autoscroll-down": "^1.1.1",
     "puppeteer-extra": "^3.3.4",
-    "puppeteer-extra-plugin-session": "^1.0.1",
     "puppeteer-extra-plugin-stealth": "^2.11.1"
   }
 }

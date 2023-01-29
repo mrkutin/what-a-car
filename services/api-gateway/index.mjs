@@ -55,11 +55,11 @@ fastify.route({
 
         if (
             plate.match(/^[АВЕКМНОРСТУХ]\d{3}(?<!000)[АВЕКМНОРСТУХ]{2}\d{2,3}$/ui) //обычный номер
-            || plate.match(/^[АВЕКМНОРСТУХ]{2}\d{3}(?<!000)\d{2,3}$/ui) //такси
-            || plate.match(/^[АВЕКМНОРСТУХ]{2}\d{4}(?<!0000)\d{2,3}$/ui) //прицеп
-            || plate.match(/^\d{4}(?<!0000)[АВЕКМНОРСТУХ]{2}\d{2,3}$/ui) //мотоцикл
-            || plate.match(/^[АВЕКМНОРСТУХ]{2}\d{3}(?<!000)[АВЕКМНОРСТУХ]\d{2,3}$/ui) //транзит
-            || plate.match(/^Т[АВЕКМНОРСТУХ]{2}\d{3}(?<!000)\d{2,3}$/ui) //выездной
+            // || plate.match(/^[АВЕКМНОРСТУХ]{2}\d{3}(?<!000)\d{2,3}$/ui) //такси
+            // || plate.match(/^[АВЕКМНОРСТУХ]{2}\d{4}(?<!0000)\d{2,3}$/ui) //прицеп
+            // || plate.match(/^\d{4}(?<!0000)[АВЕКМНОРСТУХ]{2}\d{2,3}$/ui) //мотоцикл
+            // || plate.match(/^[АВЕКМНОРСТУХ]{2}\d{3}(?<!000)[АВЕКМНОРСТУХ]\d{2,3}$/ui) //транзит
+            // || plate.match(/^Т[АВЕКМНОРСТУХ]{2}\d{3}(?<!000)\d{2,3}$/ui) //выездной
         ) {
             data = await collectByPlate(plate)
         } else if (vin.match(/^[A-Z0-9]{17}$/g)) {
@@ -72,25 +72,25 @@ fastify.route({
         }
 
         const {sravni, gibdd, autoins} = data
-        const lastOwnership = gibdd.ownershipPeriods?.[gibdd.ownershipPeriods.length - 1]
+        const lastOwnership = gibdd?.ownershipPeriods?.[gibdd.ownershipPeriods.length - 1]
 
         const output = []
 
-        output.push(`Гос. номер: ${autoins.licensePlate || sravni.carNumber || ''}`)
-        output.push(`VIN: ${autoins.vin || sravni.vin || gibdd.vehicle?.vin || ''}`)
-        output.push(`ПТС: ${gibdd.vehiclePassport ? `${gibdd.vehiclePassport.number || ''} ${gibdd.vehiclePassport.issue || ''}` : ''}`)
-        sravni?.carDocument?.documentType?.toLowerCase() === 'sts' && output.push(`СТС: ${sravni.carDocument.series} ${sravni.carDocument.number}, выдан ${sravni.carDocument.date.substring(0, 10)}`)
-        output.push(`Название: ${gibdd.vehicle?.model || autoins.makeAndModel || `${sravni.brand?.name} ${sravni.model?.name}` || ''}`)
-        output.push(`Категория: ${gibdd.vehicle?.category || ''}`)
-        output.push(`Цвет: ${gibdd.vehicle?.color || ''}`)
-        output.push(`Объем двигателя: ${gibdd.vehicle?.engineVolume || ''} куб. см`)
-        output.push(`Мощность: ${autoins.powerHp || gibdd.vehicle?.powerHp || ''} л.с.`)
-        output.push(`Год выпуска: ${gibdd.vehicle?.year || sravni.year || ''}`)
-        output.push(`Кол-во собстенников по ПТС: ${Math.ceil(gibdd.ownershipPeriods?.length / 2) || ''}`)
+        output.push(`Гос. номер: ${autoins?.licensePlate || sravni?.carNumber || ''}`)
+        output.push(`VIN: ${autoins?.vin || sravni?.vin || gibdd?.vehicle?.vin || ''}`)
+        output.push(`ПТС: ${gibdd?.vehiclePassport ? `${gibdd?.vehiclePassport.number || ''} ${gibdd?.vehiclePassport.issue || ''}` : ''}`)
+        sravni?.carDocument?.documentType?.toLowerCase() === 'sts' && output.push(`СТС: ${sravni?.carDocument?.series} ${sravni?.carDocument.number}, выдан ${sravni?.carDocument?.date.substring(0, 10)}`)
+        output.push(`Название: ${gibdd?.vehicle?.model || autoins?.makeAndModel || `${sravni?.brand?.name} ${sravni?.model?.name}` || ''}`)
+        output.push(`Категория: ${gibdd?.vehicle?.category || ''}`)
+        output.push(`Цвет: ${gibdd?.vehicle?.color || ''}`)
+        output.push(`Объем двигателя: ${gibdd?.vehicle?.engineVolume || ''} куб. см`)
+        output.push(`Мощность: ${autoins?.powerHp || gibdd?.vehicle?.powerHp || ''} л.с.`)
+        output.push(`Год выпуска: ${gibdd?.vehicle?.year || sravni?.year || ''}`)
+        output.push(`Кол-во собстенников по ПТС: ${Math.ceil(gibdd?.ownershipPeriods?.length / 2) || ''}`)
         output.push(`Последний срок владения: ${lastOwnership ? `${lastOwnership.from} - ${lastOwnership.to || 'наст. время'}` : ''}`)
-        autoins && output.push(`Полис ОСАГО: ${autoins.policyId} ${autoins.company} ${autoins.status}, ${autoins.hasRestrictions || ''}, собственник: ${autoins.vehicleOwner}, страхователь: ${autoins.policyHolder}, КБМ: ${autoins.KBM}, регион: ${autoins.region}, страховая премия: ${autoins.premium}`)
-        sravni?.brand && output.push(`Риск угона: ${sravni?.brand.isPopular ? 'высокий' : 'низкий'}`)
-        gibdd.accidents?.forEach(async accident => {
+        autoins && output.push(`Полис ОСАГО: ${autoins?.policyId} ${autoins?.company} ${autoins?.status}, ${autoins?.hasRestrictions || ''}, собственник: ${autoins?.vehicleOwner}, страхователь: ${autoins?.policyHolder}, КБМ: ${autoins?.KBM}, регион: ${autoins?.region}, страховая премия: ${autoins?.premium}`)
+        sravni?.brand && output.push(`Риск угона: ${sravni?.brand?.isPopular ? 'высокий' : 'низкий'}`)
+        gibdd?.accidents?.forEach(async accident => {
             output.push(`ДТП: ${accident.AccidentDateTime}, ${accident.AccidentPlace}, ${accident.AccidentType}, кол-во участников: ${accident.VehicleAmount}`)
         })
 

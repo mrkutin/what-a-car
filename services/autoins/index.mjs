@@ -4,9 +4,6 @@ const fastify = new Fastify({logger: true})
 import puppeteer from 'puppeteer-extra'
 import {executablePath} from 'puppeteer'
 
-import SessionPlugin from 'puppeteer-extra-plugin-session'
-puppeteer.use(SessionPlugin.default())
-
 import StealthPlugin from 'puppeteer-extra-plugin-stealth'
 puppeteer.use(StealthPlugin())
 
