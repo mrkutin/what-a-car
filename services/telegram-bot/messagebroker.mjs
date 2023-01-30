@@ -2,6 +2,9 @@ import Redis from 'ioredis'
 const sub = new Redis()
 const pub = new Redis()
 
+
+//todo sub XGROUP CREATE mystream mygroup $
+
 // Usage 1: As message hub
 const processMessage = (message) => {
     console.log("Id: %s. Data: %O", message[0], message[1]);
@@ -25,7 +28,7 @@ listenForMessage();
 setInterval(async () => {
     // `redis` is in the block mode due to `redis.xread('BLOCK', ....)`,
     // so we use another connection to publish messages.
-    //const res = await pub.xadd("user-stream", "*", "name", "John", "age",  Math.random());
+    const res = await pub.xadd("user-stream", "*", "name", "John", "age",  Math.random());
     console.log()
 }, 1000);
 
