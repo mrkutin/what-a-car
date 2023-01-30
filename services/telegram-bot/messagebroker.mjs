@@ -1,7 +1,6 @@
 import Redis from 'ioredis'
-const redis = new Redis();
-const sub = new Redis();
-const pub = new Redis();
+const sub = new Redis()
+const pub = new Redis()
 
 // Usage 1: As message hub
 const processMessage = (message) => {
@@ -26,7 +25,7 @@ listenForMessage();
 setInterval(async () => {
     // `redis` is in the block mode due to `redis.xread('BLOCK', ....)`,
     // so we use another connection to publish messages.
-    const res = await pub.xadd("user-stream", "*", "name", "John", "age",  Math.random());
+    //const res = await pub.xadd("user-stream", "*", "name", "John", "age",  Math.random());
     console.log()
-}, 1);
+}, 1000);
 
