@@ -1,5 +1,36 @@
 version: "3.9"
 services:
+  redis:
+    image: redis/redis-stack
+    restart: on-failure
+    ports:
+      - 6379:6379
+      - 8001:8001
+    volumes:
+      - redis-data:/data
+    environment:
+      REDIS_ARGS: --save 60 1 --notify-keyspace-events KEA
+  telegram-bot:
+    depends_on:
+      - redis
+    build:
+      context: services/telegram-bot/
+    image: itlaboratory/what-a-car-telegram-bot
+    restart: on-failure
+    environment:
+      REDIS_HOST: redis://redis:6379
+      TELEGRAM_BOT_TOKEN: 5973381833:AAGEiHa7g_Of537W6j1ZkSL_2MiTZhPO4JU
+  sravni:
+    depends_on:
+      - redis
+    build:
+      context: services/sravni/
+    image: itlaboratory/what-a-car-sravni
+    restart: on-failure
+    environment:
+      REDIS_HOST: redis://redis:6379
+
+
   storage:
     build:
       context: services/storage/
@@ -11,38 +42,6 @@ services:
     environment:
       REDIS_HOST: redis://redis:6379
       MONGO_HOST: mongodb://root:root@mongo:27017
-  api:
-    build:
-      context: services/api-gateway/
-    image: itlaboratory/what-a-car-api
-    restart: on-failure
-    ports:
-      - 3000:3000
-    depends_on:
-#      - sravni
-#      - autoins
-#      - gibdd
-      - redis
-    environment:
-      SRAVNI_HOST: http://sravni:8110
-      AUTOINS_HOST: http://autoins:8100
-      GIBDD_HOST: http://gibdd:8090
-      REDIS_HOST: redis://redis:6379
-  telegram-bot:
-    build:
-      context: services/telegram-bot/
-    image: itlaboratory/what-a-car-telegram-bot
-    restart: on-failure
-    environment:
-      TELEGRAM_BOT_TOKEN: 5973381833:AAGEiHa7g_Of537W6j1ZkSL_2MiTZhPO4JU
-      WHAT_A_CAR_API_HOST: http://api:3000
-  sravni:
-    build:
-      context: services/sravni/
-    image: itlaboratory/what-a-car-sravni
-    restart: on-failure
-    ports:
-      - 8110:8110
   autoins:
     build:
       context: services/autoins/
@@ -68,16 +67,6 @@ services:
       - gibdd-captcha-solver
     environment:
       CAPTCHA_SOLVER_URL: http://gibdd-captcha-solver:8080
-  redis:
-    image: redis/redis-stack
-    restart: on-failure
-    ports:
-      - 6379:6379
-      - 8001:8001
-    volumes:
-      - redis-data:/data
-    environment:
-      REDIS_ARGS: --save 60 1 --notify-keyspace-events KEA
   mongo:
     image: mongo
     restart: on-failure
