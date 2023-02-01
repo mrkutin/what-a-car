@@ -1,3 +1,6 @@
+const STREAM = 'plate_resolved'
+const STREAM_GROUP = 'telegram'
+
 const REDIS_HOST = process.env.REDIS_HOST || 'redis://0.0.0.0:6379'
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN
 const en2ruMap = {
@@ -34,7 +37,7 @@ import Redis from 'ioredis'
 const redisPub = new Redis(REDIS_HOST)
 const redisSub = new Redis(REDIS_HOST)
 try {
-    await redisSub.xgroup('CREATE', 'plate_resolved', 'telegram', '$', 'MKSTREAM')
+    await redisSub.xgroup('CREATE', STREAM, STREAM_GROUP, '$', 'MKSTREAM')
 } catch (e) {
     console.log('Group "telegram" already exists, skipping')
 }
@@ -114,11 +117,28 @@ async function listenForMessages() {
         let serviceObj = JSON.parse(await redisPub.call('JSON.GET', key))
         switch (service) {
             case 'sravni':
-                await bot.telegram.sendMessage(chat_id, `Название: ${serviceObj?.brand?.name} ${serviceObj?.model?.name}`)
-                await bot.telegram.sendMessage(chat_id, `VIN: ${serviceObj?.vin}`)
-                await bot.telegram.sendMessage(chat_id, `Год выпуска: ${serviceObj?.year}`)
-                await bot.telegram.sendMessage(chat_id, `Мощность: ${serviceObj?.power} л.с.`)
+                // await bot.telegram.sendMessage(chat_id, `Название: ${serviceObj?.brand?.name} ${serviceObj?.model?.name}`)
+                // await bot.telegram.sendMessage(chat_id, `Год выпуска: ${serviceObj?.year}`)
+                // await bot.telegram.sendMessage(chat_id, `Мощность: ${serviceObj?.power} л.с.`)
+                // await bot.telegram.sendMessage(chat_id, `VIN: ${serviceObj?.vin}`)
                 serviceObj.carDocument && await bot.telegram.sendMessage(chat_id, `СТС: ${serviceObj.carDocument.series} ${serviceObj.carDocument.number} от ${serviceObj.carDocument.date.substring(0, 10)}`)
+                break
+            case 'autoins':
+                if(serviceObj.policyId){
+                    await bot.telegram.sendMessage(chat_id, `Номер: ${serviceObj.licensePlate}`)
+                    await bot.telegram.sendMessage(chat_id, `VIN: ${serviceObj.vin}`)
+                    await bot.telegram.sendMessage(chat_id, `Автомобиль: ${serviceObj.makeAndModel}`)
+                    await bot.telegram.sendMessage(chat_id, `Мощность: ${serviceObj.powerHp} л.с.`)
+                    await bot.telegram.sendMessage(chat_id, `Полис ОСАГО: ${serviceObj.policyId} ${serviceObj.company} ${serviceObj.status}`)
+                    await bot.telegram.sendMessage(chat_id, `Цель использования: ${serviceObj.usingPurpose}`)
+                    await bot.telegram.sendMessage(chat_id, `${serviceObj.hasRestrictions}`)
+                    await bot.telegram.sendMessage(chat_id, `Собственник: ${serviceObj.vehicleOwner}`)
+                    await bot.telegram.sendMessage(chat_id, `Страхователь: ${serviceObj.policyHolder}`)
+                    await bot.telegram.sendMessage(chat_id, `КБМ: ${serviceObj.KBM}`)
+                    await bot.telegram.sendMessage(chat_id, `Регион: ${serviceObj.region}`)
+                    await bot.telegram.sendMessage(chat_id, `Страховая премия: ${serviceObj.premium}`)
+                }
+                break
         }
     })
     await Promise.all(promises)

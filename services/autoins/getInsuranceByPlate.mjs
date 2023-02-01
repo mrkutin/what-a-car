@@ -29,7 +29,7 @@ const getInsuranceByPlate = async (page, plate) => {
             flattenedTexts.splice(8, 1)
         }
 
-        const autoins = uniqueFlatText.reduce((acc, text, idx) => {
+        const autoins = flattenedTexts.reduce((acc, text, idx) => {
             acc[headers[idx]] = text
             return acc
         }, {})

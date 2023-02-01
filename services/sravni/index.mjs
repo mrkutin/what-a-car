@@ -1,3 +1,7 @@
+//блочат, если нет кук
+const STREAM = 'plate_requested'
+const STREAM_GROUP = 'sravni'
+
 const REDIS_HOST = process.env.REDIS_HOST || 'redis://0.0.0.0:6379'
 
 import Redis from 'ioredis'
@@ -5,10 +9,11 @@ import Redis from 'ioredis'
 const redisPub = new Redis(REDIS_HOST)
 const redisSub = new Redis(REDIS_HOST)
 try {
-    await redisSub.xgroup('CREATE', 'plate_requested', 'sravni', '$', 'MKSTREAM')
+    await redisSub.xgroup('CREATE', 'plate_requested', STREAM_GROUP, '$', 'MKSTREAM')
 } catch (e) {
-    console.log('Group "sravni" already exists, skipping')
+    console.log(`Group '${STREAM_GROUP}' already exists, skipping`)
 }
+
 import {getEstimateByPlate} from './getEstimateByPlate.mjs'
 
 const makeId = length => {
@@ -32,17 +37,17 @@ const flatArrayToObject = arr => {
 }
 
 async function listenForMessages(/*lastId = '$'*/) {
-    const results = await redisSub.xreadgroup('GROUP', 'sravni', makeId(7), 'BLOCK', '0', 'COUNT', '1', 'STREAMS', 'plate_requested', '>')
+    const results = await redisSub.xreadgroup('GROUP', STREAM_GROUP, makeId(7), 'BLOCK', '0', 'COUNT', '1', 'STREAMS', STREAM, '>')
     const [stream, messages] = results[0]; // `key` equals to 'plate_requested'
 
     const promises = messages.map(async message => {
         const messageObj = flatArrayToObject(message[1])
         if (messageObj.plate) {
-            const key = `sravni:${messageObj.plate}`
-            let sravni = JSON.parse(await redisPub.call('JSON.GET', key))
-            if (!sravni) {
-                sravni = await getEstimateByPlate(messageObj.plate)
-                await redisPub.call('JSON.SET', key, '$', JSON.stringify(sravni))
+            const key = `${STREAM_GROUP}:${messageObj.plate}`
+            let value = JSON.parse(await redisPub.call('JSON.GET', key))
+            if (!value) {
+                value = await getEstimateByPlate(messageObj.plate)
+                await redisPub.call('JSON.SET', key, '$', JSON.stringify(value))
                 //todo expire
             }
             await redisPub.xadd('plate_resolved', '*', 'key', key, 'chat_id', messageObj.chat_id)

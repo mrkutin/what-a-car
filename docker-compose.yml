@@ -29,6 +29,15 @@ services:
     restart: on-failure
     environment:
       REDIS_HOST: redis://redis:6379
+  autoins:
+    depends_on:
+      - redis
+    build:
+      context: services/autoins/
+    image: itlaboratory/what-a-car-autoins
+    restart: on-failure
+    environment:
+      REDIS_HOST: redis://redis:6379
 
 
   storage:
@@ -42,13 +51,6 @@ services:
     environment:
       REDIS_HOST: redis://redis:6379
       MONGO_HOST: mongodb://root:root@mongo:27017
-  autoins:
-    build:
-      context: services/autoins/
-    image: itlaboratory/what-a-car-autoins
-    restart: on-failure
-    ports:
-      - 8100:8100
   gibdd-captcha-solver:
     build:
       context: ./services/gibdd-captcha-solver/
