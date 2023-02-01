@@ -9,7 +9,7 @@ import Redis from 'ioredis'
 const redisPub = new Redis(REDIS_HOST)
 const redisSub = new Redis(REDIS_HOST)
 try {
-    await redisSub.xgroup('CREATE', 'plate_requested', STREAM_GROUP, '$', 'MKSTREAM')
+    await redisSub.xgroup('CREATE', STREAM, STREAM_GROUP, '$', 'MKSTREAM')
 } catch (e) {
     console.log(`Group '${STREAM_GROUP}' already exists, skipping`)
 }
@@ -51,11 +51,11 @@ async function listenForMessages(/*lastId = '$'*/) {
                 //todo expire
             }
             await redisPub.xadd('plate_resolved', '*', 'key', key, 'chat_id', messageObj.chat_id)
+            await redisPub.xadd('vin_requested', '*', 'vin', value.vin, 'chat_id', messageObj.chat_id)
         }
     })
     await Promise.all(promises)
 
     await listenForMessages(/*messages[messages.length - 1][0]*/)
 }
-
 listenForMessages()

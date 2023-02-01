@@ -1,8 +1,9 @@
 import axios from 'axios'
 import UserAgent from 'user-agents'
 import {getCaptcha} from './getCaptcha.mjs'
-import {solveCaptcha} from "./solveCaptcha.mjs"
+import {solveCaptcha} from './solveCaptcha.mjs'
 
+//todo extend
 const damageMap = {
     '01': 'правая фара',
     '02': 'правая передняя дверь',

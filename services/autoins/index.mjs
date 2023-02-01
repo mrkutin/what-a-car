@@ -5,11 +5,11 @@ const STREAM_GROUP = 'autoins'
 const REDIS_HOST = process.env.REDIS_HOST || 'redis://0.0.0.0:6379'
 
 import Redis from 'ioredis'
-
+    
 const redisPub = new Redis(REDIS_HOST)
 const redisSub = new Redis(REDIS_HOST)
 try {
-    await redisSub.xgroup('CREATE', 'plate_requested', 'autoins', '$', 'MKSTREAM')
+    await redisSub.xgroup('CREATE', STREAM, STREAM_GROUP, '$', 'MKSTREAM')
 } catch (e) {
     console.log(`Group '${STREAM_GROUP}' already exists, skipping`)
 }

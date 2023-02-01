@@ -38,6 +38,24 @@ services:
     restart: on-failure
     environment:
       REDIS_HOST: redis://redis:6379
+  gibdd-captcha-solver:
+    build:
+      context: ./services/gibdd-captcha-solver/
+    image: itlaboratory/what-a-car-gibdd-captcha-solver
+    restart: on-failure
+    ports:
+      - 8080:8080
+  gibdd:
+    depends_on:
+      - gibdd-captcha-solver
+      - redis
+    build:
+      context: ./services/gibdd/
+    image: itlaboratory/what-a-car-gibdd
+    restart: on-failure
+    environment:
+      REDIS_HOST: redis://redis:6379
+      CAPTCHA_SOLVER_URL: http://gibdd-captcha-solver:8080
 
 
   storage:
@@ -51,24 +69,6 @@ services:
     environment:
       REDIS_HOST: redis://redis:6379
       MONGO_HOST: mongodb://root:root@mongo:27017
-  gibdd-captcha-solver:
-    build:
-      context: ./services/gibdd-captcha-solver/
-    image: itlaboratory/what-a-car-gibdd-captcha-solver
-    restart: on-failure
-    ports:
-      - 8080:8080
-  gibdd:
-    build:
-      context: ./services/gibdd/
-    image: itlaboratory/what-a-car-gibdd
-    restart: on-failure
-    ports:
-      - 8090:8090
-    depends_on:
-      - gibdd-captcha-solver
-    environment:
-      CAPTCHA_SOLVER_URL: http://gibdd-captcha-solver:8080
   mongo:
     image: mongo
     restart: on-failure

@@ -139,6 +139,9 @@ async function listenForMessages() {
                     await bot.telegram.sendMessage(chat_id, `Страховая премия: ${serviceObj.premium}`)
                 }
                 break
+            case 'gibdd':
+                await bot.telegram.sendMessage(chat_id, `GIBDD: ${JSON.stringify(serviceObj, null, 2)}`)
+                break
         }
     })
     await Promise.all(promises)
