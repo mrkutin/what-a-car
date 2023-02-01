@@ -108,7 +108,7 @@ async function listenForMessages() {
     const results = await redisSub.xreadgroup('GROUP', 'telegram', makeId(7), 'BLOCK', '0', 'COUNT', '10', 'STREAMS', 'plate_resolved', '>')
     const [key, messages] = results[0]; // `key` equals to 'plate_resolved'
 
-    messages.forEach(async message => {
+    const promises = messages.map(async message => {
         const {key, chat_id} = flatArrayToObject(message[1])
         const [service, plate] = key.split(':')
         let serviceObj = JSON.parse(await redisPub.call('JSON.GET', key))
@@ -117,10 +117,11 @@ async function listenForMessages() {
                 await bot.telegram.sendMessage(chat_id, `Название: ${serviceObj?.brand?.name} ${serviceObj?.model?.name}`)
                 await bot.telegram.sendMessage(chat_id, `VIN: ${serviceObj?.vin}`)
                 await bot.telegram.sendMessage(chat_id, `Год выпуска: ${serviceObj?.year}`)
-                await bot.telegram.sendMessage(chat_id, `Мощность: ${serviceObj?.year} л.с.`)
+                await bot.telegram.sendMessage(chat_id, `Мощность: ${serviceObj?.power} л.с.`)
                 serviceObj.carDocument && await bot.telegram.sendMessage(chat_id, `СТС: ${serviceObj.carDocument.series} ${serviceObj.carDocument.number} от ${serviceObj.carDocument.date.substring(0, 10)}`)
         }
     })
+    await Promise.all(promises)
     await listenForMessages(/*messages[messages.length - 1][0]*/)
 }
 
