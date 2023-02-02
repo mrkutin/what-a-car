@@ -1,7 +1,4 @@
 //блочат, если нет кук
-const STREAM = 'stream:plate_requested'
-const STREAM_GROUP = 'sravni'
-
 const REDIS_HOST = process.env.REDIS_HOST || 'redis://0.0.0.0:6379'
 
 import Redis from 'ioredis'
@@ -9,9 +6,9 @@ import Redis from 'ioredis'
 const redisPub = new Redis(REDIS_HOST)
 const redisSub = new Redis(REDIS_HOST)
 try {
-    await redisSub.xgroup('CREATE', STREAM, STREAM_GROUP, '$', 'MKSTREAM')
+    await redisSub.xgroup('CREATE', 'stream:plate_requested', 'sravni', '$', 'MKSTREAM')
 } catch (e) {
-    console.log(`Group '${STREAM_GROUP}' already exists, skipping`)
+    console.log('Group "sravni" already exists, skipping')
 }
 
 import {getEstimateByPlate} from './getEstimateByPlate.mjs'
@@ -37,13 +34,13 @@ const flatArrayToObject = arr => {
 }
 
 async function listenForMessages(/*lastId = '$'*/) {
-    const results = await redisSub.xreadgroup('GROUP', STREAM_GROUP, makeId(7), 'BLOCK', '0', 'COUNT', '1', 'STREAMS', STREAM, '>')
+    const results = await redisSub.xreadgroup('GROUP', 'sravni', makeId(7), 'BLOCK', '0', 'COUNT', '1', 'STREAMS', 'stream:plate_requested', '>')
     const [stream, messages] = results[0]; // `key` equals to 'plate_requested'
 
     const promises = messages.map(async message => {
         const messageObj = flatArrayToObject(message[1])
         if (messageObj.plate) {
-            const key = `${STREAM_GROUP}:${messageObj.plate}`
+            const key = `sravni:${messageObj.plate}`
             let value = JSON.parse(await redisPub.call('JSON.GET', key))
             if (!value) {
                 value = await getEstimateByPlate(messageObj.plate)

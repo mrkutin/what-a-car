@@ -1,5 +1,3 @@
-const STREAM_GROUP = 'telegram'
-
 const REDIS_HOST = process.env.REDIS_HOST || 'redis://0.0.0.0:6379'
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN
 const en2ruMap = {
@@ -36,12 +34,12 @@ import Redis from 'ioredis'
 const redisPub = new Redis(REDIS_HOST)
 const redisSub = new Redis(REDIS_HOST)
 try {
-    await redisSub.xgroup('CREATE', 'stream:plate_resolved', STREAM_GROUP, '$', 'MKSTREAM')
+    await redisSub.xgroup('CREATE', 'stream:plate_resolved', 'telegram', '$', 'MKSTREAM')
 } catch (e) {
     console.log('Group "telegram" already exists, skipping')
 }
 try {
-    await redisSub.xgroup('CREATE', 'stream:vin_resolved', STREAM_GROUP, '$', 'MKSTREAM')
+    await redisSub.xgroup('CREATE', 'stream:vin_resolved', 'telegram', '$', 'MKSTREAM')
 } catch (e) {
     console.log('Group "telegram" already exists, skipping')
 }
