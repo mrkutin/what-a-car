@@ -165,7 +165,7 @@ async function listenForMessages() {
                 if(serviceObj.ownershipPeriods?.length){
                     await bot.telegram.sendMessage(chat_id, '<b>РЕГИСТРАЦИОННЫЕ ДЕЙСТВИЯ</b>', {parse_mode: 'HTML'})
                     for(const period of serviceObj.ownershipPeriods){
-                        await bot.telegram.sendMessage(chat_id, `С ${period.from} по ${period.to}: ${period.ownerType}, ${period.operation}`)
+                        await bot.telegram.sendMessage(chat_id, `С ${period.from} по ${period.to || 'настоящее время'}: ${period.ownerType}, ${period.operation}`)
                     }
                 }
 
