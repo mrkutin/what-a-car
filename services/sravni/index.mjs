@@ -1,5 +1,5 @@
 //блочат, если нет кук
-const STREAM = 'plate_requested'
+const STREAM = 'stream:plate_requested'
 const STREAM_GROUP = 'sravni'
 
 const REDIS_HOST = process.env.REDIS_HOST || 'redis://0.0.0.0:6379'
@@ -50,8 +50,8 @@ async function listenForMessages(/*lastId = '$'*/) {
                 await redisPub.call('JSON.SET', key, '$', JSON.stringify(value))
                 //todo expire
             }
-            await redisPub.xadd('plate_resolved', '*', 'key', key, 'chat_id', messageObj.chat_id)
-            await redisPub.xadd('vin_requested', '*', 'vin', value.vin, 'chat_id', messageObj.chat_id)
+            await redisPub.xadd('stream:plate_resolved', '*', 'key', key, 'chat_id', messageObj.chat_id)
+            await redisPub.xadd('stream:vin_requested', '*', 'vin', value.vin, 'chat_id', messageObj.chat_id)
         }
     })
     await Promise.all(promises)

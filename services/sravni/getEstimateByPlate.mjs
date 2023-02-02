@@ -1,3 +1,5 @@
+const COOKIES_FILE = './cookies.json'
+
 import fs from 'fs'
 
 import puppeteer from 'puppeteer-extra'
@@ -29,8 +31,8 @@ const getEstimateByPlate = async plate => {
     const page = await browser.newPage()
 
     let cookies = []
-    if (fs.existsSync('./cookies.txt')) {
-        const file = fs.readFileSync('./cookies.txt', {encoding: 'utf8'})
+    if (fs.existsSync(COOKIES_FILE)) {
+        const file = fs.readFileSync(COOKIES_FILE, {encoding: 'utf8'})
         cookies = JSON.parse(file)
     }
 
@@ -106,7 +108,7 @@ const getEstimateByPlate = async plate => {
         const {years, models, powers, ...sravni} = res
 
         const cookies = await page.cookies()
-        fs.writeFileSync('./cookies.txt', JSON.stringify(cookies, null, 2), {encoding: 'utf8'})
+        fs.writeFileSync(COOKIES_FILE, JSON.stringify(cookies, null, 2), {encoding: 'utf8'})
 
         await browser.close()
         return sravni

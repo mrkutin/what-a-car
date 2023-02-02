@@ -1,4 +1,3 @@
-const STREAM = 'plate_resolved'
 const STREAM_GROUP = 'telegram'
 
 const REDIS_HOST = process.env.REDIS_HOST || 'redis://0.0.0.0:6379'
@@ -37,7 +36,12 @@ import Redis from 'ioredis'
 const redisPub = new Redis(REDIS_HOST)
 const redisSub = new Redis(REDIS_HOST)
 try {
-    await redisSub.xgroup('CREATE', STREAM, STREAM_GROUP, '$', 'MKSTREAM')
+    await redisSub.xgroup('CREATE', 'stream:plate_resolved', STREAM_GROUP, '$', 'MKSTREAM')
+} catch (e) {
+    console.log('Group "telegram" already exists, skipping')
+}
+try {
+    await redisSub.xgroup('CREATE', 'stream:vin_resolved', STREAM_GROUP, '$', 'MKSTREAM')
 } catch (e) {
     console.log('Group "telegram" already exists, skipping')
 }
@@ -92,10 +96,10 @@ bot.on('text', async (ctx) => {
         // || plate.match(/^[АВЕКМНОРСТУХ]{2}\d{3}(?<!000)[АВЕКМНОРСТУХ]\d{2,3}$/ui) //транзит
         // || plate.match(/^Т[АВЕКМНОРСТУХ]{2}\d{3}(?<!000)\d{2,3}$/ui) //выездной
     ) {
-        await redisPub.xadd('plate_requested', '*', 'plate', plate, 'chat_id', chat_id, 'user_id', id, 'user_name', username, 'user_first_name', first_name, 'user_last_name', last_name, 'user_language_code', language_code)
+        await redisPub.xadd('stream:plate_requested', '*', 'plate', plate, 'chat_id', chat_id, 'user_id', id, 'user_name', username, 'user_first_name', first_name, 'user_last_name', last_name, 'user_language_code', language_code)
 
     } else if (vin.match(/^[A-Z0-9]{17}$/g)) {
-        await redisPub.xadd('vin_requested', '*', 'vin', vin, 'chat_id', chat_id, 'user_id', id, 'user_name', username, 'user_first_name', first_name, 'user_last_name', last_name, 'user_language_code', language_code)
+        await redisPub.xadd('stream:vin_requested', '*', 'vin', vin, 'chat_id', chat_id, 'user_id', id, 'user_name', username, 'user_first_name', first_name, 'user_last_name', last_name, 'user_language_code', language_code)
 
     } else {
         ctx.reply('Это не похоже ни на номер, ни на VIN')
@@ -108,10 +112,13 @@ process.once('SIGINT', () => bot.stop('SIGINT'))
 process.once('SIGTERM', () => bot.stop('SIGTERM'))
 
 async function listenForMessages() {
-    const results = await redisSub.xreadgroup('GROUP', 'telegram', makeId(7), 'BLOCK', '0', 'COUNT', '10', 'STREAMS', 'plate_resolved', '>')
-    const [key, messages] = results[0]; // `key` equals to 'plate_resolved'
+    const results = await redisSub.xreadgroup('GROUP', 'telegram', makeId(7), 'BLOCK', '0', 'COUNT', '10', 'STREAMS', 'stream:plate_resolved', 'stream:vin_resolved', '>', '>')
 
-    const promises = messages.map(async message => {
+    const flatMessages = results.reduce((acc, result) => {
+        return acc.concat(result[1])//messages
+    }, [])
+
+    const promises = flatMessages.map(async message => {
         const {key, chat_id} = flatArrayToObject(message[1])
         const [service, plate] = key.split(':')
         let serviceObj = JSON.parse(await redisPub.call('JSON.GET', key))
@@ -121,7 +128,7 @@ async function listenForMessages() {
                 // await bot.telegram.sendMessage(chat_id, `Год выпуска: ${serviceObj?.year}`)
                 // await bot.telegram.sendMessage(chat_id, `Мощность: ${serviceObj?.power} л.с.`)
                 // await bot.telegram.sendMessage(chat_id, `VIN: ${serviceObj?.vin}`)
-                serviceObj.carDocument && await bot.telegram.sendMessage(chat_id, `СТС: ${serviceObj.carDocument.series} ${serviceObj.carDocument.number} от ${serviceObj.carDocument.date.substring(0, 10)}`)
+                serviceObj.carDocument && await bot.telegram.sendMessage(chat_id, `СТС: ${serviceObj.carDocument.series || ''} ${serviceObj.carDocument.number || ''}${serviceObj.carDocument.date ? ` от ${serviceObj.carDocument.date?.substring(0, 10)}` : ''}`)
                 break
             case 'autoins':
                 if(serviceObj.policyId){

@@ -1,4 +1,4 @@
-const STREAM = 'vin_requested'
+const STREAM = 'stream:vin_requested'
 const STREAM_GROUP = 'gibdd'
 
 const REDIS_HOST = process.env.REDIS_HOST || 'redis://0.0.0.0:6379'
@@ -53,7 +53,7 @@ async function listenForMessages(/*lastId = '$'*/) {
                 await redisPub.call('JSON.SET', key, '$', JSON.stringify(value))
                 //todo expire
             }
-            await redisPub.xadd('plate_resolved', '*', 'key', key, 'chat_id', messageObj.chat_id)
+            await redisPub.xadd('stream:vin_resolved', '*', 'key', key, 'chat_id', messageObj.chat_id)
         }
     })
     await Promise.all(promises)
