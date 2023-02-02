@@ -48,6 +48,7 @@ async function listenForMessages(/*lastId = '$'*/) {
                 //todo expire
             }
             await redisPub.xadd('stream:plate_resolved', '*', 'key', key, 'chat_id', messageObj.chat_id)
+            //always request vin
             await redisPub.xadd('stream:vin_requested', '*', 'vin', value.vin, 'chat_id', messageObj.chat_id)
         }
     })

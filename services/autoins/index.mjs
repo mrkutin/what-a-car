@@ -69,7 +69,15 @@ async function listenForMessages(/*lastId = '$'*/) {
                 //todo expire
             }
             await redisPub.xadd('stream:plate_resolved', '*', 'key', key, 'chat_id', messageObj.chat_id)
-            await redisPub.xadd('stream:vin_requested', '*', 'vin', value.vin, 'chat_id', messageObj.chat_id)
+            //request vin only if not been requested by sravni
+            const vinRequestedHistory = await redisPub.xrevrange('stream:vin_requested', '+', Date.now() - 10000, 'COUNT', '100')
+            const foundIdx = vinRequestedHistory.findIndex(message => {
+                const {vin, chat_id} = flatArrayToObject(message[1])
+                return vin === value.vin && chat_id === messageObj.chat_id
+            })
+            if(foundIdx === -1){
+                await redisPub.xadd('stream:vin_requested', '*', 'vin', value.vin, 'chat_id', messageObj.chat_id)
+            }
         }
     })
     await Promise.all(promises)
