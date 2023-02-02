@@ -51,8 +51,14 @@ async function listenForMessages(/*lastId = '$'*/) {
             const key = `gibdd:${messageObj.vin}`
             let value = JSON.parse(await redisPub.call('JSON.GET', key))
             if (!value) {
-                value = await getHistoryByVin(messageObj.vin)
-                await redisPub.call('JSON.SET', key, '$', JSON.stringify(value))
+                const history = await getHistoryByVin(messageObj.vin)
+                const accidents = await getAccidentsByVin(messageObj.vin)
+                const wanted = await getWantedByVin(messageObj.vin)
+                const restrictions = await getRestrictionsByVin(messageObj.vin)
+                const diagnosticCards = await getDiagnosticCardsByVin(messageObj.vin)
+                const res = {...history, accidents, wanted, restrictions, diagnosticCards}
+
+                await redisPub.call('JSON.SET', key, '$', JSON.stringify(res))
                 //todo expire
             }
             await redisPub.xadd('stream:vin_resolved', '*', 'key', key, 'chat_id', messageObj.chat_id)
@@ -64,45 +70,3 @@ async function listenForMessages(/*lastId = '$'*/) {
 }
 
 listenForMessages()
-
-// fastify.route({
-//     method: 'GET',
-//     url: '/',
-//     handler: async () => {
-//         return 'GIBDD'
-//     }
-// })
-//
-// fastify.route({
-//     method: 'GET',
-//     url: '/vins/:vin',
-//     handler: async (req) => {
-//         const vin = req.params.vin
-//
-//         const history = await getHistoryByVin(vin)
-//         if(!history){
-//             return null
-//         }
-//
-//         const accidents = await getAccidentsByVin(vin)
-//         const wanted = await getWantedByVin(vin)
-//         const restrictions = await getRestrictionsByVin(vin)
-//         const diagnosticCards = await getDiagnosticCardsByVin(vin)
-//
-//         return {...history, accidents, wanted, restrictions, diagnosticCards}
-//     }
-// })
-//
-// const startHTTPServer = async () => {
-//     try {
-//         await fastify.listen({
-//             host: '0.0.0.0',
-//             port: 8090
-//         })
-//     } catch (err) {
-//         fastify.log.error(err)
-//         process.exit(1)
-//     }
-// }
-//
-// startHTTPServer()

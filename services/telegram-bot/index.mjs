@@ -122,14 +122,18 @@ async function listenForMessages() {
         let serviceObj = JSON.parse(await redisPub.call('JSON.GET', key))
         switch (service) {
             case 'sravni':
-                // await bot.telegram.sendMessage(chat_id, `Название: ${serviceObj?.brand?.name} ${serviceObj?.model?.name}`)
-                // await bot.telegram.sendMessage(chat_id, `Год выпуска: ${serviceObj?.year}`)
-                // await bot.telegram.sendMessage(chat_id, `Мощность: ${serviceObj?.power} л.с.`)
-                // await bot.telegram.sendMessage(chat_id, `VIN: ${serviceObj?.vin}`)
-                serviceObj.carDocument && await bot.telegram.sendMessage(chat_id, `СТС: ${serviceObj.carDocument.series || ''} ${serviceObj.carDocument.number || ''}${serviceObj.carDocument.date ? ` от ${serviceObj.carDocument.date?.substring(0, 10)}` : ''}`)
+                if(serviceObj.carDocument){
+                    await bot.telegram.sendMessage(chat_id, '<b>СТС</b>', {parse_mode: 'HTML'})
+                    await bot.telegram.sendMessage(chat_id, `${serviceObj.carDocument.series || ''} ${serviceObj.carDocument.number || ''}${serviceObj.carDocument.date ? ` от ${serviceObj.carDocument.date?.substring(0, 10)}` : ''}`)
+                    // await bot.telegram.sendMessage(chat_id, `Название: ${serviceObj?.brand?.name} ${serviceObj?.model?.name}`)
+                    // await bot.telegram.sendMessage(chat_id, `Год выпуска: ${serviceObj?.year}`)
+                    // await bot.telegram.sendMessage(chat_id, `Мощность: ${serviceObj?.power} л.с.`)
+                    // await bot.telegram.sendMessage(chat_id, `VIN: ${serviceObj?.vin}`)
+                }
                 break
             case 'autoins':
                 if(serviceObj.policyId){
+                    await bot.telegram.sendMessage(chat_id, '<b>ОСАГО</b>', {parse_mode: 'HTML'})
                     await bot.telegram.sendMessage(chat_id, `Номер: ${serviceObj.licensePlate}`)
                     await bot.telegram.sendMessage(chat_id, `VIN: ${serviceObj.vin}`)
                     await bot.telegram.sendMessage(chat_id, `Автомобиль: ${serviceObj.makeAndModel}`)
@@ -145,7 +149,32 @@ async function listenForMessages() {
                 }
                 break
             case 'gibdd':
-                await bot.telegram.sendMessage(chat_id, `GIBDD: ${JSON.stringify(serviceObj, null, 2)}`)
+                if(serviceObj.vehicle){
+                    await bot.telegram.sendMessage(chat_id, '<b>АВТОМОБИЛЬ</b>', {parse_mode: 'HTML'})
+                    await bot.telegram.sendMessage(chat_id, `VIN: ${serviceObj.vehicle.vin}`)
+                    await bot.telegram.sendMessage(chat_id, `Название: ${serviceObj.vehicle.model}`)
+                    await bot.telegram.sendMessage(chat_id, `Категория: ${serviceObj.vehicle.category}`)
+                    await bot.telegram.sendMessage(chat_id, `Цвет: ${serviceObj.vehicle.color}`)
+                    await bot.telegram.sendMessage(chat_id, `Год: ${serviceObj.vehicle.year}`)
+                    await bot.telegram.sendMessage(chat_id, `Объем двигателя: ${serviceObj.vehicle.engineVolume}`)
+                    await bot.telegram.sendMessage(chat_id, `Номер кузова: ${serviceObj.vehicle.bodyNumber}`)
+                    await bot.telegram.sendMessage(chat_id, `Номер двигателя: ${serviceObj.vehicle.engineNumber}`)
+                    await bot.telegram.sendMessage(chat_id, `Мощность двигателя: ${serviceObj.vehicle.powerHp} л.с.`)
+                }
+
+                if(serviceObj.ownershipPeriods?.length){
+                    await bot.telegram.sendMessage(chat_id, '<b>РЕГИСТРАЦИОННЫЕ ДЕЙСТВИЯ</b>', {parse_mode: 'HTML'})
+                    for(const period of serviceObj.ownershipPeriods){
+                        await bot.telegram.sendMessage(chat_id, `С ${period.from} по ${period.to}: ${period.ownerType}, ${period.operation}`)
+                    }
+                }
+
+                if(serviceObj.accidents?.length){
+                    await bot.telegram.sendMessage(chat_id, '<b>УЧАСТИЕ в ДТП</b>', {parse_mode: 'HTML'})
+                    for(const accident of serviceObj.accidents){
+                        await bot.telegram.sendMessage(chat_id, `${accident.AccidentDateTime} ${accident.AccidentPlace}, ${accident.AccidentType.toLowerCase()}, количество участников: ${accident.VehicleAmount}${accident?.DamagePoints?.length ? `, повреждения: ${accident?.DamagePoints.join(', ')}` : ''}`)
+                    }
+                }
                 break
         }
     })
