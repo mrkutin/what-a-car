@@ -40,9 +40,12 @@ const flatArrayToObject = arr => {
 
 async function listenForMessages(/*lastId = '$'*/) {
     const results = await redisSub.xreadgroup('GROUP', 'gibdd', makeId(7), 'BLOCK', '0', 'COUNT', '1', 'STREAMS', STREAM, '>')
-    const [stream, messages] = results[0]; // `key` equals to 'plate_requested'
 
-    const promises = messages.map(async message => {
+    const flatMessages = results.reduce((acc, result) => {
+        return acc.concat(result[1])//messages
+    }, [])
+
+    const promises = flatMessages.map(async message => {
         const messageObj = flatArrayToObject(message[1])
         if (messageObj.vin) {
             const key = `gibdd:${messageObj.vin}`

@@ -35,9 +35,12 @@ const flatArrayToObject = arr => {
 
 async function listenForMessages(/*lastId = '$'*/) {
     const results = await redisSub.xreadgroup('GROUP', 'sravni', makeId(7), 'BLOCK', '0', 'COUNT', '1', 'STREAMS', 'stream:plate_requested', '>')
-    const [stream, messages] = results[0]; // `key` equals to 'plate_requested'
 
-    const promises = messages.map(async message => {
+    const flatMessages = results.reduce((acc, result) => {
+        return acc.concat(result[1])//messages
+    }, [])
+
+    const promises = flatMessages.map(async message => {
         const messageObj = flatArrayToObject(message[1])
         if (messageObj.plate) {
             const key = `sravni:${messageObj.plate}`
