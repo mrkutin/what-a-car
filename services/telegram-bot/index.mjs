@@ -100,7 +100,7 @@ bot.on('text', async (ctx) => {
         await redisPub.xadd('stream:vin_requested', '*', 'vin', vin, 'chat_id', chat_id, 'user_id', id, 'user_name', username, 'user_first_name', first_name, 'user_last_name', last_name, 'user_language_code', language_code)
 
     } else {
-        ctx.reply('Это не похоже ни на номер, ни на VIN')
+        ctx.reply('Это не похоже на номер')
     }
 })
 

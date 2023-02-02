@@ -4,15 +4,22 @@ import {getCaptcha} from './getCaptcha.mjs'
 import {solveCaptcha} from './solveCaptcha.mjs'
 
 const getHistoryByVin = async (plate, sts) => {
+    let regnum, regreg
+    if (plate.match(/^[АВЕКМНОРСТУХ]\d{3}(?<!000)[АВЕКМНОРСТУХ]{2}\d{2,3}$/ui) ) {//обычный номер
+        regnum = plate.substr(0, 6)
+        regreg = plate.substr(6)
+    } else {
+        return null
+    }
     const makeRequest = async () => {
         const {captchaToken, base64jpg} = await getCaptcha()
         const {captchaWord} = await solveCaptcha(base64jpg)
         const userAgentData = new UserAgent().data
 
         const res = await axios.post('https://xn--b1afk4ade.xn--90adear.xn--p1ai/proxy/check/fines', {
-            regnum: 'т617ам',
-            regreg: '790',
-            stsnum: '9923843432',
+            regnum,
+            regreg,
+            stsnum: sts,
             captchaWord,
             captchaToken
         }, {
@@ -62,7 +69,7 @@ const getHistoryByVin = async (plate, sts) => {
     return res
 }
 
-await getHistoryByVin(null, null)
-console.log()
+const fines = await getHistoryByVin('т617ам790', '9923843432')
+console.log(JSON.stringify(fines, null, 2))
 
 export {getHistoryByVin}
