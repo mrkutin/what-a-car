@@ -56,7 +56,7 @@ async function listenForMessages(/*lastId = '$'*/) {
         const {key, chat_id} = flatArrayToObject(message[1])
         const messageObj = JSON.parse(await redisPub.call('JSON.GET', key))//object with vin field
 
-        if (messageObj.carDocument?.series && messageObj.carDocument?.number && messageObj.carNumber) {
+        if (messageObj?.carDocument?.series && messageObj?.carDocument?.number && messageObj?.carNumber) {
             const key = `fines:${messageObj.carDocument.series}${messageObj.carDocument.number}:${messageObj.carNumber}`
             let value = JSON.parse(await redisPub.call('JSON.GET', key))
             if (!value) {
@@ -77,7 +77,7 @@ async function listenForMessages(/*lastId = '$'*/) {
         const {key, chat_id} = flatArrayToObject(message[1])
         const messageObj = JSON.parse(await redisPub.call('JSON.GET', key))//object with vin field
 
-        if (messageObj.vin) {
+        if (messageObj?.vin) {
             const key = `gibdd:${messageObj.vin}`
 
             //debounce
