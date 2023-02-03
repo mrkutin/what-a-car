@@ -1,15 +1,19 @@
-const STREAM = 'stream:vin_requested'
-
 const REDIS_HOST = process.env.REDIS_HOST || 'redis://0.0.0.0:6379'
 
 import Redis from 'ioredis'
 
 const redisPub = new Redis(REDIS_HOST)
 const redisSub = new Redis(REDIS_HOST)
+
 try {
-    await redisSub.xgroup('CREATE', STREAM, 'gibdd', '$', 'MKSTREAM')
+    await redisSub.xgroup('CREATE', 'stream:sravni:resolved', 'gibdd', '$', 'MKSTREAM')
 } catch (e) {
-    console.log('Group "gibdd" already exists, skipping')
+    console.log('Group "gibdd" already exists in stream:sravni:resolved, skipping')
+}
+try {
+    await redisSub.xgroup('CREATE', 'stream:autoins:resolved', 'gibdd', '$', 'MKSTREAM')
+} catch (e) {
+    console.log('Group "gibdd" already exists in stream:autoins:resolved, skipping')
 }
 
 import {getHistoryByVin} from './getHistoryByVin.mjs'
@@ -39,14 +43,15 @@ const flatArrayToObject = arr => {
 }
 
 async function listenForMessages(/*lastId = '$'*/) {
-    const results = await redisSub.xreadgroup('GROUP', 'gibdd', makeId(7), 'BLOCK', '0', 'COUNT', '1', 'STREAMS', STREAM, '>')
+    const results = await redisSub.xreadgroup('GROUP', 'gibdd', makeId(7), 'BLOCK', '0', 'COUNT', '1', 'STREAMS', 'stream:sravni:resolved', 'stream:autoins:resolved', '>', '>')
 
     const flatMessages = results.reduce((acc, result) => {
         return acc.concat(result[1])//messages
     }, [])
 
     const promises = flatMessages.map(async message => {
-        const messageObj = flatArrayToObject(message[1])
+        const {key, chat_id} = flatArrayToObject(message[1])
+        let messageObj = JSON.parse(await redisPub.call('JSON.GET', key))
         if (messageObj.vin) {
             const key = `gibdd:${messageObj.vin}`
             let value = JSON.parse(await redisPub.call('JSON.GET', key))
@@ -61,7 +66,7 @@ async function listenForMessages(/*lastId = '$'*/) {
                 await redisPub.call('JSON.SET', key, '$', JSON.stringify(res))
                 //todo expire
             }
-            await redisPub.xadd('stream:vin_resolved', '*', 'key', key, 'chat_id', messageObj.chat_id)
+            await redisPub.xadd('stream:gibdd:resolved', '*', 'key', key, 'chat_id', chat_id)
         }
     })
     await Promise.all(promises)

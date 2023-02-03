@@ -6,9 +6,9 @@ import Redis from 'ioredis'
 const redisPub = new Redis(REDIS_HOST)
 const redisSub = new Redis(REDIS_HOST)
 try {
-    await redisSub.xgroup('CREATE', 'stream:plate_requested', 'sravni', '$', 'MKSTREAM')
+    await redisSub.xgroup('CREATE', 'stream:plate:requested', 'sravni', '$', 'MKSTREAM')
 } catch (e) {
-    console.log('Group "sravni" already exists, skipping')
+    console.log('Group "sravni" already exists in stream:plate:requested, skipping')
 }
 
 import {getEstimateByPlate} from './getEstimateByPlate.mjs'
@@ -34,7 +34,7 @@ const flatArrayToObject = arr => {
 }
 
 async function listenForMessages(/*lastId = '$'*/) {
-    const results = await redisSub.xreadgroup('GROUP', 'sravni', makeId(7), 'BLOCK', '0', 'COUNT', '1', 'STREAMS', 'stream:plate_requested', '>')
+    const results = await redisSub.xreadgroup('GROUP', 'sravni', makeId(7), 'BLOCK', '0', 'COUNT', '1', 'STREAMS', 'stream:plate:requested', '>')
 
     const flatMessages = results.reduce((acc, result) => {
         return acc.concat(result[1])//messages
@@ -50,9 +50,7 @@ async function listenForMessages(/*lastId = '$'*/) {
                 await redisPub.call('JSON.SET', key, '$', JSON.stringify(value))
                 //todo expire
             }
-            await redisPub.xadd('stream:plate_resolved', '*', 'key', key, 'chat_id', messageObj.chat_id)
-            //always request vin
-            await redisPub.xadd('stream:vin_requested', '*', 'vin', value.vin, 'chat_id', messageObj.chat_id)
+            await redisPub.xadd('stream:sravni:resolved', '*', 'key', key, 'chat_id', messageObj.chat_id)
         }
     })
     await Promise.all(promises)

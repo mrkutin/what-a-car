@@ -34,14 +34,19 @@ import Redis from 'ioredis'
 const redisPub = new Redis(REDIS_HOST)
 const redisSub = new Redis(REDIS_HOST)
 try {
-    await redisSub.xgroup('CREATE', 'stream:plate_resolved', 'telegram', '$', 'MKSTREAM')
+    await redisSub.xgroup('CREATE', 'stream:sravni:resolved', 'telegram', '$', 'MKSTREAM')
 } catch (e) {
-    console.log('Group "telegram" already exists, skipping')
+    console.log('Group "telegram" already exists in stream:sravni:resolved, skipping')
 }
 try {
-    await redisSub.xgroup('CREATE', 'stream:vin_resolved', 'telegram', '$', 'MKSTREAM')
+    await redisSub.xgroup('CREATE', 'stream:autoins:resolved', 'telegram', '$', 'MKSTREAM')
 } catch (e) {
-    console.log('Group "telegram" already exists, skipping')
+    console.log('Group "telegram" already exists in stream:autoins:resolved, skipping')
+}
+try {
+    await redisSub.xgroup('CREATE', 'stream:gibdd:resolved', 'telegram', '$', 'MKSTREAM')
+} catch (e) {
+    console.log('Group "telegram" already exists in stream:gibdd:resolved, skipping')
 }
 
 import {Telegraf} from 'telegraf'
@@ -94,10 +99,10 @@ bot.on('text', async (ctx) => {
         // || plate.match(/^[АВЕКМНОРСТУХ]{2}\d{3}(?<!000)[АВЕКМНОРСТУХ]\d{2,3}$/ui) //транзит
         // || plate.match(/^Т[АВЕКМНОРСТУХ]{2}\d{3}(?<!000)\d{2,3}$/ui) //выездной
     ) {
-        await redisPub.xadd('stream:plate_requested', '*', 'plate', plate, 'chat_id', chat_id, 'user_id', id, 'user_name', username, 'user_first_name', first_name, 'user_last_name', last_name, 'user_language_code', language_code)
+        await redisPub.xadd('stream:plate:requested', '*', 'plate', plate, 'chat_id', chat_id, 'user_id', id, 'user_name', username, 'user_first_name', first_name, 'user_last_name', last_name, 'user_language_code', language_code)
 
     } else if (vin.match(/^[A-Z0-9]{17}$/g)) {
-        await redisPub.xadd('stream:vin_requested', '*', 'vin', vin, 'chat_id', chat_id, 'user_id', id, 'user_name', username, 'user_first_name', first_name, 'user_last_name', last_name, 'user_language_code', language_code)
+        await redisPub.xadd('stream:vin:requested', '*', 'vin', vin, 'chat_id', chat_id, 'user_id', id, 'user_name', username, 'user_first_name', first_name, 'user_last_name', last_name, 'user_language_code', language_code)
 
     } else {
         ctx.reply('Это не похоже на номер')
@@ -110,7 +115,7 @@ process.once('SIGINT', () => bot.stop('SIGINT'))
 process.once('SIGTERM', () => bot.stop('SIGTERM'))
 
 async function listenForMessages() {
-    const results = await redisSub.xreadgroup('GROUP', 'telegram', makeId(7), 'BLOCK', '0', 'COUNT', '10', 'STREAMS', 'stream:plate_resolved', 'stream:vin_resolved', '>', '>')
+    const results = await redisSub.xreadgroup('GROUP', 'telegram', makeId(7), 'BLOCK', '0', 'COUNT', '1', 'STREAMS', 'stream:sravni:resolved', 'stream:autoins:resolved', 'stream:gibdd:resolved', '>', '>', '>')
 
     const flatMessages = results.reduce((acc, result) => {
         return acc.concat(result[1])//messages
@@ -122,7 +127,7 @@ async function listenForMessages() {
         let serviceObj = JSON.parse(await redisPub.call('JSON.GET', key))
         switch (service) {
             case 'sravni':
-                if(serviceObj.carDocument){
+                if (serviceObj.carDocument) {
                     await bot.telegram.sendMessage(chat_id, '<b>СТС</b>', {parse_mode: 'HTML'})
                     await bot.telegram.sendMessage(chat_id, `${serviceObj.carDocument.series || ''} ${serviceObj.carDocument.number || ''}${serviceObj.carDocument.date ? ` от ${serviceObj.carDocument.date?.substring(0, 10)}` : ''}`)
                     // await bot.telegram.sendMessage(chat_id, `Название: ${serviceObj?.brand?.name} ${serviceObj?.model?.name}`)
@@ -132,7 +137,7 @@ async function listenForMessages() {
                 }
                 break
             case 'autoins':
-                if(serviceObj.policyId){
+                if (serviceObj.policyId) {
                     await bot.telegram.sendMessage(chat_id, '<b>ОСАГО</b>', {parse_mode: 'HTML'})
                     await bot.telegram.sendMessage(chat_id, `Номер: ${serviceObj.licensePlate}`)
                     await bot.telegram.sendMessage(chat_id, `VIN: ${serviceObj.vin}`)
@@ -149,7 +154,7 @@ async function listenForMessages() {
                 }
                 break
             case 'gibdd':
-                if(serviceObj.vehicle){
+                if (serviceObj.vehicle) {
                     await bot.telegram.sendMessage(chat_id, '<b>АВТОМОБИЛЬ</b>', {parse_mode: 'HTML'})
                     await bot.telegram.sendMessage(chat_id, `VIN: ${serviceObj.vehicle.vin}`)
                     await bot.telegram.sendMessage(chat_id, `Название: ${serviceObj.vehicle.model}`)
@@ -162,16 +167,16 @@ async function listenForMessages() {
                     await bot.telegram.sendMessage(chat_id, `Мощность двигателя: ${serviceObj.vehicle.powerHp} л.с.`)
                 }
 
-                if(serviceObj.ownershipPeriods?.length){
+                if (serviceObj.ownershipPeriods?.length) {
                     await bot.telegram.sendMessage(chat_id, '<b>РЕГИСТРАЦИОННЫЕ ДЕЙСТВИЯ</b>', {parse_mode: 'HTML'})
-                    for(const period of serviceObj.ownershipPeriods){
+                    for (const period of serviceObj.ownershipPeriods) {
                         await bot.telegram.sendMessage(chat_id, `С ${period.from} по ${period.to || 'настоящее время'}: ${period.ownerType}, ${period.operation}`)
                     }
                 }
 
-                if(serviceObj.accidents?.length){
+                if (serviceObj.accidents?.length) {
                     await bot.telegram.sendMessage(chat_id, '<b>УЧАСТИЕ в ДТП</b>', {parse_mode: 'HTML'})
-                    for(const accident of serviceObj.accidents){
+                    for (const accident of serviceObj.accidents) {
                         await bot.telegram.sendMessage(chat_id, `${accident.AccidentDateTime} ${accident.AccidentPlace}, ${accident.AccidentType.toLowerCase()}, количество участников: ${accident.VehicleAmount}${accident?.DamagePoints?.length ? `, повреждения: ${accident?.DamagePoints.join(', ')}` : ''}`)
                     }
                 }

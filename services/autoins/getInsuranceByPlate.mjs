@@ -1,3 +1,6 @@
+const COOKIES_FILE = './cookies.json'
+
+import fs from 'fs'
 import headers from './headers.mjs'
 
 const getInsuranceByPlate = async (page, plate) => {
@@ -16,6 +19,9 @@ const getInsuranceByPlate = async (page, plate) => {
 
         await page.waitForSelector('#buttonBack')
         await page.click('#buttonBack')
+
+        const cookies = await page.cookies()
+        fs.writeFileSync(COOKIES_FILE, JSON.stringify(cookies, null, 2), {encoding: 'utf8'})
 
         const flattenedTexts = texts.map(el => el.split('\n').map(el => {
             const split = el.split('\t')
