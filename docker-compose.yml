@@ -17,9 +17,10 @@ services:
       context: services/telegram-bot/
     image: itlaboratory/what-a-car-telegram-bot
     restart: on-failure
+    env_file:
+      - .env
     environment:
       REDIS_HOST: redis://redis:6379
-      TELEGRAM_BOT_TOKEN: 5973381833:AAGEiHa7g_Of537W6j1ZkSL_2MiTZhPO4JU
   sravni:
     depends_on:
       - redis
@@ -35,7 +36,7 @@ services:
     build:
       context: services/autoins/
     image: itlaboratory/what-a-car-autoins
-#    restart: on-failure
+    restart: on-failure
     environment:
       REDIS_HOST: redis://redis:6379
   gibdd-captcha-solver:

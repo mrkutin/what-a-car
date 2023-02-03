@@ -1,9 +1,9 @@
 // блочат по IP если было больше 2 новых сессий, поэтому делаем все в одной сессии
 const REDIS_HOST = process.env.REDIS_HOST || 'redis://0.0.0.0:6379'
-const COOKIES_FILE = './cookies.json'
+//const COOKIES_FILE = './cookies.json'
 
 import Redis from 'ioredis'
-import fs from 'fs'
+//import fs from 'fs'
 
 const redisPub = new Redis(REDIS_HOST)
 const redisSub = new Redis(REDIS_HOST)
@@ -34,10 +34,10 @@ const browser = await puppeteer.launch({
 const page = await browser.newPage()
 
 let cookies = []
-if (fs.existsSync(COOKIES_FILE)) {
-    const file = fs.readFileSync(COOKIES_FILE, {encoding: 'utf8'})
-    cookies = JSON.parse(file)
-}
+// if (fs.existsSync(COOKIES_FILE)) {
+//     const file = fs.readFileSync(COOKIES_FILE, {encoding: 'utf8'})
+//     cookies = JSON.parse(file)
+// }
 if (!cookies || !cookies.length) {
     cookies = [
         {name: '_ym_d', value: '1675408600', domain: '.autoins.ru'},
