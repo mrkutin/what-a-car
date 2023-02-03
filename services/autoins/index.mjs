@@ -80,7 +80,7 @@ async function listenForMessages(/*lastId = '$'*/) {
         return acc.concat(result[1])//messages
     }, [])
 
-    const promises = flatMessages.map(async message => {
+    for(const message of flatMessages){
         const messageObj = flatArrayToObject(message[1])
         if (messageObj.plate) {
             const key = `autoins:${messageObj.plate}`
@@ -91,19 +91,8 @@ async function listenForMessages(/*lastId = '$'*/) {
                 //todo expire
             }
             await redisPub.xadd('stream:autoins:resolved', '*', 'key', key, 'chat_id', messageObj.chat_id)
-            // //request vin only if not been requested by sravni
-            // const vinRequestedHistory = await redisPub.xrevrange('stream:vin_requested', '+', Date.now() - 10000, 'COUNT', '100')
-            // const foundIdx = vinRequestedHistory.findIndex(message => {
-            //     const {vin, chat_id} = flatArrayToObject(message[1])
-            //     return vin === value.vin && chat_id === messageObj.chat_id
-            // })
-            // if(foundIdx === -1){
-            //     await redisPub.xadd('stream:vin_requested', '*', 'vin', value.vin, 'chat_id', messageObj.chat_id)
-            // }
         }
-    })
-    await Promise.all(promises)
-
+    }
     await listenForMessages(/*messages[messages.length - 1][0]*/)
 }
 

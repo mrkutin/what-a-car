@@ -115,13 +115,13 @@ process.once('SIGINT', () => bot.stop('SIGINT'))
 process.once('SIGTERM', () => bot.stop('SIGTERM'))
 
 async function listenForMessages() {
-    const results = await redisSub.xreadgroup('GROUP', 'telegram', makeId(7), 'BLOCK', '0', 'COUNT', '1', 'STREAMS', 'stream:sravni:resolved', 'stream:autoins:resolved', 'stream:gibdd:resolved', '>', '>', '>')
+    const results = await redisSub.xreadgroup('GROUP', 'telegram', makeId(7), 'BLOCK', '0', 'COUNT', '10', 'STREAMS', 'stream:sravni:resolved', 'stream:autoins:resolved', 'stream:gibdd:resolved', '>', '>', '>')
 
     const flatMessages = results.reduce((acc, result) => {
         return acc.concat(result[1])//messages
     }, [])
 
-    const promises = flatMessages.map(async message => {
+    for (const message of flatMessages){
         const {key, chat_id} = flatArrayToObject(message[1])
         const [service, plate] = key.split(':')
         let serviceObj = JSON.parse(await redisPub.call('JSON.GET', key))
@@ -182,8 +182,8 @@ async function listenForMessages() {
                 }
                 break
         }
-    })
-    await Promise.all(promises)
+    }
+
     await listenForMessages(/*messages[messages.length - 1][0]*/)
 }
 

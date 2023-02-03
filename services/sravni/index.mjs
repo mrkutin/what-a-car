@@ -40,7 +40,7 @@ async function listenForMessages(/*lastId = '$'*/) {
         return acc.concat(result[1])//messages
     }, [])
 
-    const promises = flatMessages.map(async message => {
+    for(const message of flatMessages){
         const messageObj = flatArrayToObject(message[1])
         if (messageObj.plate) {
             const key = `sravni:${messageObj.plate}`
@@ -52,9 +52,7 @@ async function listenForMessages(/*lastId = '$'*/) {
             }
             await redisPub.xadd('stream:sravni:resolved', '*', 'key', key, 'chat_id', messageObj.chat_id)
         }
-    })
-    await Promise.all(promises)
-
+    }
     await listenForMessages(/*messages[messages.length - 1][0]*/)
 }
 listenForMessages()
