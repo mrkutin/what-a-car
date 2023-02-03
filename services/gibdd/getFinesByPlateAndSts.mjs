@@ -3,7 +3,7 @@ import UserAgent from 'user-agents'
 import {getCaptcha} from './getCaptcha.mjs'
 import {solveCaptcha} from './solveCaptcha.mjs'
 
-const getHistoryByVin = async (plate, sts) => {
+const getFinesByPlateAndSts = async (plate, sts) => {
     let regnum, regreg
     if (plate.match(/^[АВЕКМНОРСТУХ]\d{3}(?<!000)[АВЕКМНОРСТУХ]{2}\d{2,3}$/ui) ) {//обычный номер
         regnum = plate.substr(0, 6)
@@ -69,7 +69,7 @@ const getHistoryByVin = async (plate, sts) => {
     return res
 }
 
-const fines = await getHistoryByVin('т617ам790', '9923843432')
-console.log(JSON.stringify(fines, null, 2))
+// const fines = await getFinesByPlateAndSts('т617ам790', '9923843432')
+// console.log(JSON.stringify(fines, null, 2))
 
-export {getHistoryByVin}
+export {getFinesByPlateAndSts}

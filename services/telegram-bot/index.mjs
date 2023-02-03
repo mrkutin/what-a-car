@@ -48,6 +48,11 @@ try {
 } catch (e) {
     console.log('Group "telegram" already exists in stream:gibdd:resolved, skipping')
 }
+try {
+    await redisSub.xgroup('CREATE', 'stream:fines:resolved', 'telegram', '$', 'MKSTREAM')
+} catch (e) {
+    console.log('Group "telegram" already exists in stream:fines:resolved, skipping')
+}
 
 import {Telegraf} from 'telegraf'
 
@@ -115,13 +120,30 @@ process.once('SIGINT', () => bot.stop('SIGINT'))
 process.once('SIGTERM', () => bot.stop('SIGTERM'))
 
 async function listenForMessages() {
-    const results = await redisSub.xreadgroup('GROUP', 'telegram', makeId(7), 'BLOCK', '0', 'COUNT', '10', 'STREAMS', 'stream:sravni:resolved', 'stream:autoins:resolved', 'stream:gibdd:resolved', '>', '>', '>')
+    const results = await redisSub.xreadgroup(
+        'GROUP',
+        'telegram',
+        makeId(7),
+        'BLOCK',
+        '0',
+        'COUNT',
+        '10',
+        'STREAMS',
+        'stream:sravni:resolved',
+        'stream:autoins:resolved',
+        'stream:gibdd:resolved',
+        'stream:fines:resolved',
+        '>',
+        '>',
+        '>',
+        '>'
+    )
 
     const flatMessages = results.reduce((acc, result) => {
         return acc.concat(result[1])//messages
     }, [])
 
-    for (const message of flatMessages){
+    for (const message of flatMessages) {
         const {key, chat_id} = flatArrayToObject(message[1])
         const [service, plate] = key.split(':')
         let serviceObj = JSON.parse(await redisPub.call('JSON.GET', key))
@@ -178,6 +200,14 @@ async function listenForMessages() {
                     await bot.telegram.sendMessage(chat_id, '<b>УЧАСТИЕ в ДТП</b>', {parse_mode: 'HTML'})
                     for (const accident of serviceObj.accidents) {
                         await bot.telegram.sendMessage(chat_id, `${accident.AccidentDateTime} ${accident.AccidentPlace}, ${accident.AccidentType.toLowerCase()}, количество участников: ${accident.VehicleAmount}${accident?.DamagePoints?.length ? `, повреждения: ${accident?.DamagePoints.join(', ')}` : ''}`)
+                    }
+                }
+                break
+            case 'fines':
+                if(serviceObj.fines?.length){
+                    await bot.telegram.sendMessage(chat_id, '<b>ШТРАФЫ</b>', {parse_mode: 'HTML'})
+                    for (const fine of serviceObj.fines) {
+                        await bot.telegram.sendMessage(chat_id, `${fine.DateDecis || ''} <b>${fine.Summa || 0} руб.</b>${fine.enableDiscount ? ` (можно оплатить со скидкой до ${fine.DateDiscount})` : ''}, ${fine.KoAPcode || ''}, ${fine.KoAPtext || ''}, ${fine.division?.name ? `${fine.division.name}` : ''}${fine.division?.fulladdr ? `, ${fine.division.fulladdr}` : ''}`, {parse_mode: 'HTML'})
                     }
                 }
                 break

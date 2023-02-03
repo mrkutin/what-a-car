@@ -21,6 +21,7 @@ import {getAccidentsByVin} from './getAccidentsByVin.mjs'
 import {getWantedByVin} from './getWantedByVin.mjs'
 import {getRestrictionsByVin} from './getRestrictionsByVin.mjs'
 import {getDiagnosticCardsByVin} from './getDiagnosticCardsByVin.mjs'
+import {getFinesByPlateAndSts} from './getFinesByPlateAndSts.mjs'
 
 const makeId = length => {
     let result = ''
@@ -45,25 +46,47 @@ const flatArrayToObject = arr => {
 async function listenForMessages(/*lastId = '$'*/) {
     const results = await redisSub.xreadgroup('GROUP', 'gibdd', makeId(7), 'BLOCK', '0', 'COUNT', '10', 'STREAMS', 'stream:sravni:resolved', 'stream:autoins:resolved', '>', '>')
 
-    const flatMessages = results.reduce((acc, result) => {
-        return acc.concat(result[1])//messages
-    }, [])
-
-    for (const message of flatMessages){
+    //only messages with STS
+    const flatMessagesWithSts = results
+        .filter(([stream]) => stream === 'stream:sravni:resolved')
+        .reduce((acc, result) => {
+            return acc.concat(result[1])//messages
+        }, [])
+    for (const message of flatMessagesWithSts) {
         const {key, chat_id} = flatArrayToObject(message[1])
-        const messageObj = JSON.parse(await redisPub.call('JSON.GET', key))
+        const messageObj = JSON.parse(await redisPub.call('JSON.GET', key))//object with vin field
+
+        if (messageObj.carDocument?.series && messageObj.carDocument?.number && messageObj.carNumber) {
+            const key = `fines:${messageObj.carDocument.series}${messageObj.carDocument.number}:${messageObj.carNumber}`
+            let value = JSON.parse(await redisPub.call('JSON.GET', key))
+            if (!value) {
+                const fines = await getFinesByPlateAndSts(`${messageObj.carDocument.series}${messageObj.carDocument.number}`, messageObj.carNumber)
+                await redisPub.call('JSON.SET', key, '$', JSON.stringify({fines}))
+                // todo expire
+            }
+            await redisPub.xadd('stream:fines:resolved', '*', 'key', key, 'chat_id', chat_id)
+        }
+    }
+
+    //all messages including these with SMS
+    const flatMessages = results
+        .reduce((acc, result) => {
+            return acc.concat(result[1])//messages
+        }, [])
+    for (const message of flatMessages) {
+        const {key, chat_id} = flatArrayToObject(message[1])
+        const messageObj = JSON.parse(await redisPub.call('JSON.GET', key))//object with vin field
 
         if (messageObj.vin) {
             const key = `gibdd:${messageObj.vin}`
 
-            //cross-check for debounce
+            //debounce
             const history = await redisPub.xrevrange('stream:gibdd:resolved', '+', Date.now() - 10000, 'COUNT', '100')
             const idx = history.findIndex(message => {
                 const {key: history_key, chat_id: history_chat_id} = flatArrayToObject(message[1])
                 return key === history_key && chat_id === history_chat_id
             })
-            if(idx === -1){
-                console.log('request found!!!')
+            if (idx === -1) {
                 let value = JSON.parse(await redisPub.call('JSON.GET', key))
                 if (!value) {
                     const history = await getHistoryByVin(messageObj.vin)
@@ -74,7 +97,7 @@ async function listenForMessages(/*lastId = '$'*/) {
                     const res = {...history, accidents, wanted, restrictions, diagnosticCards}
 
                     await redisPub.call('JSON.SET', key, '$', JSON.stringify(res))
-                    //todo expire
+                    // todo expire
                 }
                 await redisPub.xadd('stream:gibdd:resolved', '*', 'key', key, 'chat_id', chat_id)
             }
