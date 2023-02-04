@@ -31,8 +31,9 @@ const getInsuranceByPlate = async (page, plate) => {
         if(!flattenedTexts.length)
             return null
 
-        if(flattenedTexts[7] === flattenedTexts[8]){//to remove duplicate vins
-            flattenedTexts.splice(8, 1)
+        //to remove duplicate vins
+        if((flattenedTexts[7] === flattenedTexts[8]) || (flattenedTexts[7] === 'Сведения отсутствуют')){
+            flattenedTexts.splice(7, 1)
         }
 
         const autoins = flattenedTexts.reduce((acc, text, idx) => {
