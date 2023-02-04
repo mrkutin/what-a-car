@@ -96,11 +96,11 @@ async function listenForMessages() {
         const now = new Date()
 
         if (!foundResult) {
-            await chats.insertOne({chat_id: parseInt(chat_id), user_id: parseInt(user_id), user_name, user_first_name, user_last_name, user_language_code, plates: [plate], createdBy: now})
+            await chats.insertOne({chat_id: parseInt(chat_id), user_id: parseInt(user_id), user_name, user_first_name, user_last_name, user_language_code, plates: {[plate]: [now]}, createdBy: now})
         } else {
             await chats.updateOne({chat_id: parseInt(chat_id)}, {
-                $addToSet: {
-                    plates: plate
+                $push: {
+                    [`plates.${plate}`]: now
                 },
                 $set: {
                     user_id: parseInt(user_id), user_name, user_first_name, user_last_name, user_language_code, updatedAt: now
