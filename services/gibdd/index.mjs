@@ -62,7 +62,7 @@ async function listenForMessages(/*lastId = '$'*/) {
             if (!value) {
                 const fines = await getFinesByPlateAndSts(`${messageObj.carDocument.series}${messageObj.carDocument.number}`, messageObj.carNumber)
                 await redisPub.call('JSON.SET', key, '$', JSON.stringify({fines}))
-                // todo expire
+                await redisPub.expire(key, 24 * 3600)//1 day
             }
             await redisPub.xadd('stream:fines:resolved', '*', 'key', key, 'chat_id', chat_id)
         }

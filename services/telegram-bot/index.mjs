@@ -204,11 +204,13 @@ async function listenForMessages() {
                 }
                 break
             case 'fines':
+                await bot.telegram.sendMessage(chat_id, '<b>ШТРАФЫ</b>', {parse_mode: 'HTML'})
                 if(serviceObj.fines?.length){
-                    await bot.telegram.sendMessage(chat_id, '<b>ШТРАФЫ</b>', {parse_mode: 'HTML'})
                     for (const fine of serviceObj.fines) {
                         await bot.telegram.sendMessage(chat_id, `${fine.DateDecis || ''} <b>${fine.Summa || 0} руб.</b>${fine.enableDiscount ? ` (можно оплатить со скидкой до ${fine.DateDiscount})` : ''}, ${fine.KoAPcode || ''}, ${fine.KoAPtext || ''}, ${fine.division?.name ? `${fine.division.name}` : ''}${fine.division?.fulladdr ? `, ${fine.division.fulladdr}` : ''}`, {parse_mode: 'HTML'})
                     }
+                } else {
+                    await bot.telegram.sendMessage(chat_id, 'не найдены')
                 }
                 break
         }
