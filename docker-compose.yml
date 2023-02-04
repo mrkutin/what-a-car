@@ -57,8 +57,6 @@ services:
     environment:
       REDIS_HOST: redis://redis:6379
       CAPTCHA_SOLVER_URL: http://gibdd-captcha-solver:8080
-
-
   storage:
     build:
       context: services/storage/
