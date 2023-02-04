@@ -9,7 +9,7 @@ services:
     volumes:
       - redis-data:/data
     environment:
-      REDIS_ARGS: --save 60 1 --notify-keyspace-events KEA
+      REDIS_ARGS: --save 60 1 #--notify-keyspace-events KEA
   telegram-bot:
     depends_on:
       - redis

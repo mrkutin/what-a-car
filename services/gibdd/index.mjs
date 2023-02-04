@@ -53,7 +53,7 @@ async function listenForMessages(/*lastId = '$'*/) {
             return acc.concat(result[1])//messages
         }, [])
     for (const message of flatMessagesWithSts) {
-        const {key, chat_id} = flatArrayToObject(message[1])
+        const {key, chat_id, plate} = flatArrayToObject(message[1])
         const messageObj = JSON.parse(await redisPub.call('JSON.GET', key))//object with vin field
 
         if (messageObj?.carDocument?.series && messageObj?.carDocument?.number && messageObj?.carNumber) {
@@ -64,7 +64,7 @@ async function listenForMessages(/*lastId = '$'*/) {
                 await redisPub.call('JSON.SET', key, '$', JSON.stringify({fines}))
                 await redisPub.expire(key, 24 * 3600)//1 day
             }
-            await redisPub.xadd('stream:fines:resolved', '*', 'key', key, 'chat_id', chat_id)
+            await redisPub.xadd('stream:fines:resolved', '*', 'key', key, 'chat_id', chat_id, 'plate', plate)
         }
     }
 
@@ -74,7 +74,7 @@ async function listenForMessages(/*lastId = '$'*/) {
             return acc.concat(result[1])//messages
         }, [])
     for (const message of flatMessages) {
-        const {key, chat_id} = flatArrayToObject(message[1])
+        const {key, chat_id, plate} = flatArrayToObject(message[1])
         const messageObj = JSON.parse(await redisPub.call('JSON.GET', key))//object with vin field
 
         if (messageObj?.vin) {
@@ -99,7 +99,7 @@ async function listenForMessages(/*lastId = '$'*/) {
                     await redisPub.call('JSON.SET', key, '$', JSON.stringify(res))
                     // todo expire
                 }
-                await redisPub.xadd('stream:gibdd:resolved', '*', 'key', key, 'chat_id', chat_id)
+                await redisPub.xadd('stream:gibdd:resolved', '*', 'key', key, 'chat_id', chat_id, 'plate', plate)
             }
         }
     }

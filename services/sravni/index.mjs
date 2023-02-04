@@ -50,7 +50,7 @@ async function listenForMessages(/*lastId = '$'*/) {
                 await redisPub.call('JSON.SET', key, '$', JSON.stringify(value))
                 //todo expire
             }
-            await redisPub.xadd('stream:sravni:resolved', '*', 'key', key, 'chat_id', messageObj.chat_id)
+            await redisPub.xadd('stream:sravni:resolved', '*', 'key', key, 'chat_id', messageObj.chat_id, 'plate', messageObj.plate)
         }
     }
     await listenForMessages(/*messages[messages.length - 1][0]*/)

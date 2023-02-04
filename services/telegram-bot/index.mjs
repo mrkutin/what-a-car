@@ -107,8 +107,6 @@ bot.on('text', async (ctx) => {
         await redisPub.xadd('stream:plate:requested', '*', 'plate', plate, 'chat_id', chat_id, 'user_id', id, 'user_name', username, 'user_first_name', first_name, 'user_last_name', last_name, 'user_language_code', language_code)
 
     } else if (vin.match(/^[A-Z0-9]{17}$/g)) {
-        await redisPub.xadd('stream:vin:requested', '*', 'vin', vin, 'chat_id', chat_id, 'user_id', id, 'user_name', username, 'user_first_name', first_name, 'user_last_name', last_name, 'user_language_code', language_code)
-
     } else {
         ctx.reply('Это не похоже на номер')
     }
