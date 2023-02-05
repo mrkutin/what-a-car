@@ -1,3 +1,6 @@
+import querystring from 'node:querystring'
+import moment from 'moment'
+
 import puppeteer from 'puppeteer-extra'
 import {executablePath} from 'puppeteer'
 
@@ -30,12 +33,16 @@ await page.waitForSelector('#tsBlockTab', {timeout: 5000})
 await page.click('#tsBlockTab')
 
 const getProcessId = async plate => {
-    await page.evaluate((plate) => {
-        const licensePlate = document.querySelector('#licensePlate')
-        licensePlate.value = plate
-    }, plate)
+    // await page.evaluate((plate) => {
+    //     const licensePlate = document.querySelector('#licensePlate')
+    //     licensePlate.value = plate
+    // }, plate)
+    const encodedPlate = querystring.encode({licensePlate: plate})
+    const todayFormatted = moment().format('DD.MM.YYYY')
+
     await page.evaluate(`getRecaptchaToken("6LcWXc8gAAAAAMpgB0-7TzTELlr8f7T2XiTrexO5", function (token) {
             var formData = getFormDataParams(token);
+            var formData = "bsoseries=%D0%A1%D0%A1%D0%A1&bsonumber=&requestDate=${todayFormatted}&vin=&${encodedPlate}&bodyNumber=&chassisNumber=&isBsoRequest=false&&captcha=" + token;
             $.ajax({
                 type: "post",
                 cache: false,
