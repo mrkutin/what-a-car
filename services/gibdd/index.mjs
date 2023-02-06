@@ -58,11 +58,12 @@ async function listenForMessages(/*lastId = '$'*/) {
 
         if (messageObj?.carDocument?.series && messageObj?.carDocument?.number && messageObj?.carNumber) {
             const key = `fines:${messageObj.carDocument.series}${messageObj.carDocument.number}:${messageObj.carNumber}`
+            const chatSettings = JSON.parse(await redisPub.call('JSON.GET', `chat:${chat_id}`))
             let value = JSON.parse(await redisPub.call('JSON.GET', key))
-            if (!value) {
+            if (!value || !chatSettings?.cache) {
                 const fines = await getFinesByPlateAndSts(`${messageObj.carDocument.series}${messageObj.carDocument.number}`, messageObj.carNumber)
                 await redisPub.call('JSON.SET', key, '$', JSON.stringify({fines}))
-                await redisPub.expire(key, 24 * 3600)//1 day
+                await redisPub.expire(key, 24 * 3600) // 1 day
             }
             await redisPub.xadd('stream:fines:resolved', '*', 'key', key, 'chat_id', chat_id, 'plate', plate)
         }
@@ -87,8 +88,9 @@ async function listenForMessages(/*lastId = '$'*/) {
                 return key === history_key && chat_id === history_chat_id
             })
             if (idx === -1) {
+                const chatSettings = JSON.parse(await redisPub.call('JSON.GET', `chat:${chat_id}`))
                 let value = JSON.parse(await redisPub.call('JSON.GET', key))
-                if (!value) {
+                if (!value || !chatSettings?.cache) {
                     const history = await getHistoryByVin(messageObj.vin)
                     const accidents = await getAccidentsByVin(messageObj.vin)
                     const wanted = await getWantedByVin(messageObj.vin)
@@ -97,7 +99,7 @@ async function listenForMessages(/*lastId = '$'*/) {
                     const res = {...history, accidents, wanted, restrictions, diagnosticCards}
 
                     await redisPub.call('JSON.SET', key, '$', JSON.stringify(res))
-                    // todo expire
+                    await redisPub.expire(key, 24 * 3600) // 1 day
                 }
                 await redisPub.xadd('stream:gibdd:resolved', '*', 'key', key, 'chat_id', chat_id, 'plate', plate)
             }

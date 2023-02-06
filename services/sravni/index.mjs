@@ -42,15 +42,17 @@ async function listenForMessages(/*lastId = '$'*/) {
 
     for(const message of flatMessages){
         const messageObj = flatArrayToObject(message[1])
-        if (messageObj.plate) {
-            const key = `sravni:${messageObj.plate}`
+        const {chat_id, plate} = messageObj
+        if (plate) {
+            const key = `sravni:${plate}`
+            const chatSettings = JSON.parse(await redisPub.call('JSON.GET', `chat:${chat_id}`))
             let value = JSON.parse(await redisPub.call('JSON.GET', key))
-            if (!value) {
-                value = await getEstimateByPlate(messageObj.plate)
+            if (!value || !chatSettings?.cache) {
+                value = await getEstimateByPlate(plate)
                 await redisPub.call('JSON.SET', key, '$', JSON.stringify(value))
-                //todo expire
+                await redisPub.expire(key, 24 * 3600) // 1 day
             }
-            await redisPub.xadd('stream:sravni:resolved', '*', 'key', key, 'chat_id', messageObj.chat_id, 'plate', messageObj.plate)
+            await redisPub.xadd('stream:sravni:resolved', '*', 'key', key, 'chat_id', chat_id, 'plate', plate)
         }
     }
     await listenForMessages(/*messages[messages.length - 1][0]*/)

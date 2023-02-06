@@ -70,7 +70,7 @@ const getFinesByPlateAndSts = async (plate, sts) => {
 }
 
 // const fines = await getFinesByPlateAndSts('т617ам790', '9923843432')
-const fines = await getFinesByPlateAndSts('Т275АТ797', '9918388772')
-console.log(JSON.stringify(fines, null, 2))
+// const fines = await getFinesByPlateAndSts('Т275АТ797', '9918388772')
+// console.log(JSON.stringify(fines, null, 2))
 
 export {getFinesByPlateAndSts}

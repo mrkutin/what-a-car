@@ -55,6 +55,7 @@ try {
 }
 
 import {Telegraf} from 'telegraf'
+import {message} from 'telegraf/filters'
 
 const bot = new Telegraf(TELEGRAM_BOT_TOKEN)
 
@@ -80,7 +81,22 @@ const flatArrayToObject = arr => {
 
 bot.start((ctx) => ctx.reply('Привет, это бот "Что за тачка?"\nДля проверки тачки отправь её номер'))
 
-bot.on('text', async (ctx) => {
+bot.command('cache', async ctx => {
+    const {update} = ctx
+    const {message} = update
+    const {text, chat} = message
+    const param = text.split(' ')[1]
+    const cache = ['on', 'true', '1', 'yes', 'enable'].includes(param.toLowerCase())
+    await redisPub.call('JSON.SET', `chat:${chat.id}`, '$', JSON.stringify({cache}))
+    if(cache){
+        await ctx.reply('Cache enabled')
+    } else {
+        await ctx.reply('Cache disabled')
+    }
+
+})
+
+bot.on(message('text'), async ctx => {
     const {update} = ctx
     const {message} = update
     const {from, text, chat} = message
@@ -203,7 +219,7 @@ async function listenForMessages() {
                 break
             case 'fines':
                 await bot.telegram.sendMessage(chat_id, '<b>ШТРАФЫ</b>', {parse_mode: 'HTML'})
-                if(serviceObj.fines?.length){
+                if (serviceObj.fines?.length) {
                     for (const fine of serviceObj.fines) {
                         await bot.telegram.sendMessage(chat_id, `${fine.DateDecis || ''} <b>${fine.Summa || 0} руб.</b>${fine.enableDiscount ? ` (можно оплатить со скидкой до ${fine.DateDiscount})` : ''}, ${fine.KoAPcode || ''}, ${fine.KoAPtext || ''}, ${fine.division?.name ? `${fine.division.name}` : ''}${fine.division?.fulladdr ? `, ${fine.division.fulladdr}` : ''}`, {parse_mode: 'HTML'})
                     }

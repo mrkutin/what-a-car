@@ -45,15 +45,17 @@ async function listenForMessages(/*lastId = '$'*/) {
 
     for(const message of flatMessages){
         const messageObj = flatArrayToObject(message[1])
-        if (messageObj.plate) {
-            const key = `autoins:${messageObj.plate}`
+        const {chat_id, plate} = messageObj
+        if (plate) {
+            const key = `autoins:${plate}`
+            const chatSettings = JSON.parse(await redisPub.call('JSON.GET', `chat:${chat_id}`))
             let value = JSON.parse(await redisPub.call('JSON.GET', key))
-            if (!value) {
-                value = await getInsuranceByPlate(messageObj.plate)
+            if (!value || !chatSettings?.cache) {
+                value = await getInsuranceByPlate(plate)
                 await redisPub.call('JSON.SET', key, '$', JSON.stringify(value))
-                //todo expire
+                await redisPub.expire(key, 24 * 3600) // 1 day
             }
-            await redisPub.xadd('stream:autoins:resolved', '*', 'key', key, 'chat_id', messageObj.chat_id, 'plate', messageObj.plate)
+            await redisPub.xadd('stream:autoins:resolved', '*', 'key', key, 'chat_id', chat_id, 'plate', plate)
         }
     }
     await listenForMessages(/*messages[messages.length - 1][0]*/)
