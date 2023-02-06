@@ -31,6 +31,16 @@ services:
     environment:
       REDIS_HOST: redis://redis:6379
       REDIS_EXPIRATION_SEC: 604800
+  ingos:
+    depends_on:
+      - redis
+    build:
+      context: services/ingos/
+    image: itlaboratory/what-a-car-ingos
+    restart: on-failure
+    environment:
+      REDIS_HOST: redis://redis:6379
+      REDIS_EXPIRATION_SEC: 604800
   autoins:
     depends_on:
       - redis

@@ -53,6 +53,11 @@ try {
 } catch (e) {
     console.log('Group "telegram" already exists in stream:fines:resolved, skipping')
 }
+try {
+    await redisSub.xgroup('CREATE', 'stream:ingos:resolved', 'telegram', '$', 'MKSTREAM')
+} catch (e) {
+    console.log('Group "telegram" already exists in stream:ingos:resolved, skipping')
+}
 
 import {Telegraf} from 'telegraf'
 import {message} from 'telegraf/filters'
@@ -147,6 +152,8 @@ async function listenForMessages() {
         'stream:autoins:resolved',
         'stream:gibdd:resolved',
         'stream:fines:resolved',
+        'stream:ingos:resolved',
+        '>',
         '>',
         '>',
         '>',
@@ -227,6 +234,9 @@ async function listenForMessages() {
                     await bot.telegram.sendMessage(chat_id, 'не найдены')
                 }
                 break
+            case 'ingos':
+                await bot.telegram.sendMessage(chat_id, '<b>INGOS</b>', {parse_mode: 'HTML'})
+                await bot.telegram.sendMessage(chat_id, JSON.stringify(serviceObj, null, 2))
         }
     }
 
