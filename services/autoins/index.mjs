@@ -50,7 +50,7 @@ async function listenForMessages(/*lastId = '$'*/) {
             const key = `autoins:${plate}`
             const chatSettings = JSON.parse(await redisPub.call('JSON.GET', `chat:${chat_id}`))
             let value = JSON.parse(await redisPub.call('JSON.GET', key))
-            if (!value || !chatSettings?.cache) {
+            if (!value || chatSettings?.cache === false) {
                 value = await getInsuranceByPlate(plate)
                 await redisPub.call('JSON.SET', key, '$', JSON.stringify(value))
                 await redisPub.expire(key, 24 * 3600) // 1 day

@@ -60,7 +60,7 @@ async function listenForMessages(/*lastId = '$'*/) {
             const key = `fines:${messageObj.carDocument.series}${messageObj.carDocument.number}:${messageObj.carNumber}`
             const chatSettings = JSON.parse(await redisPub.call('JSON.GET', `chat:${chat_id}`))
             let value = JSON.parse(await redisPub.call('JSON.GET', key))
-            if (!value || !chatSettings?.cache) {
+            if (!value || chatSettings?.cache === false) {
                 const fines = await getFinesByPlateAndSts(`${messageObj.carDocument.series}${messageObj.carDocument.number}`, messageObj.carNumber)
                 await redisPub.call('JSON.SET', key, '$', JSON.stringify({fines}))
                 await redisPub.expire(key, 24 * 3600) // 1 day
@@ -90,7 +90,7 @@ async function listenForMessages(/*lastId = '$'*/) {
             if (idx === -1) {
                 const chatSettings = JSON.parse(await redisPub.call('JSON.GET', `chat:${chat_id}`))
                 let value = JSON.parse(await redisPub.call('JSON.GET', key))
-                if (!value || !chatSettings?.cache) {
+                if (!value || chatSettings?.cache === false) {
                     const history = await getHistoryByVin(messageObj.vin)
                     const accidents = await getAccidentsByVin(messageObj.vin)
                     const wanted = await getWantedByVin(messageObj.vin)
