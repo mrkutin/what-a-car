@@ -1,4 +1,5 @@
 const REDIS_HOST = process.env.REDIS_HOST || 'redis://0.0.0.0:6379'
+const REDIS_EXPIRATION_SEC = parseInt(process.env.REDIS_EXPIRATION_SEC || 86400)
 
 import Redis from 'ioredis'
 
@@ -61,9 +62,9 @@ async function listenForMessages(/*lastId = '$'*/) {
             const chatSettings = JSON.parse(await redisPub.call('JSON.GET', `chat:${chat_id}`))
             let value = JSON.parse(await redisPub.call('JSON.GET', key))
             if (!value || chatSettings?.cache === false) {
-                const fines = await getFinesByPlateAndSts(`${messageObj.carDocument.series}${messageObj.carDocument.number}`, messageObj.carNumber)
+                const fines = await getFinesByPlateAndSts(messageObj.carNumber,`${messageObj.carDocument.series}${messageObj.carDocument.number}`)
                 await redisPub.call('JSON.SET', key, '$', JSON.stringify({fines}))
-                await redisPub.expire(key, 24 * 3600) // 1 day
+                await redisPub.expire(key, REDIS_EXPIRATION_SEC)
             }
             await redisPub.xadd('stream:fines:resolved', '*', 'key', key, 'chat_id', chat_id, 'plate', plate)
         }
@@ -99,7 +100,7 @@ async function listenForMessages(/*lastId = '$'*/) {
                     const res = {...history, accidents, wanted, restrictions, diagnosticCards}
 
                     await redisPub.call('JSON.SET', key, '$', JSON.stringify(res))
-                    await redisPub.expire(key, 24 * 3600) // 1 day
+                    await redisPub.expire(key, REDIS_EXPIRATION_SEC)
                 }
                 await redisPub.xadd('stream:gibdd:resolved', '*', 'key', key, 'chat_id', chat_id, 'plate', plate)
             }

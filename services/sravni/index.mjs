@@ -1,5 +1,6 @@
 //блочат, если нет кук
 const REDIS_HOST = process.env.REDIS_HOST || 'redis://0.0.0.0:6379'
+const REDIS_EXPIRATION_SEC = parseInt(process.env.REDIS_EXPIRATION_SEC || 86400)
 
 import Redis from 'ioredis'
 
@@ -50,7 +51,7 @@ async function listenForMessages(/*lastId = '$'*/) {
             if (!value || chatSettings?.cache === false) {
                 value = await getEstimateByPlate(plate)
                 await redisPub.call('JSON.SET', key, '$', JSON.stringify(value))
-                await redisPub.expire(key, 24 * 3600) // 1 day
+                await redisPub.expire(key, REDIS_EXPIRATION_SEC)
             }
             await redisPub.xadd('stream:sravni:resolved', '*', 'key', key, 'chat_id', chat_id, 'plate', plate)
         }

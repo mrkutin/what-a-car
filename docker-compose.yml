@@ -30,6 +30,7 @@ services:
     restart: on-failure
     environment:
       REDIS_HOST: redis://redis:6379
+      REDIS_EXPIRATION_SEC: 604800
   autoins:
     depends_on:
       - redis
@@ -39,6 +40,7 @@ services:
 #    restart: on-failure
     environment:
       REDIS_HOST: redis://redis:6379
+      REDIS_EXPIRATION_SEC: 604800
   gibdd-captcha-solver:
     build:
       context: ./services/gibdd-captcha-solver/
@@ -56,6 +58,7 @@ services:
     restart: on-failure
     environment:
       REDIS_HOST: redis://redis:6379
+      REDIS_EXPIRATION_SEC: 604800
       CAPTCHA_SOLVER_URL: http://gibdd-captcha-solver:8080
   storage:
     build:
