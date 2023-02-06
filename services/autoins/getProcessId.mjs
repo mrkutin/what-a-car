@@ -33,10 +33,21 @@ await page.waitForSelector('#tsBlockTab', {timeout: 5000})
 await page.click('#tsBlockTab')
 
 const getProcessId = async plate => {
-    // await page.evaluate((plate) => {
-    //     const licensePlate = document.querySelector('#licensePlate')
-    //     licensePlate.value = plate
-    // }, plate)
+    const responsePromise = new Promise((resolve, reject) => {
+        page.on('response', async (response) => {
+            if (response.request().url().includes('policyInfo.htm')) {
+                const json = await response.json()
+                if(!json?.processId){
+                    resolve(null)
+                }
+                resolve(json.processId)
+            }
+        })
+        setTimeout(() => {
+            reject(new Error(`/api/autoInfo waiting timeout for ${plate}`))
+        }, 20000)
+    })
+
     const encodedPlate = querystring.encode({licensePlate: plate})
     const todayFormatted = moment().format('DD.MM.YYYY')
 
@@ -84,9 +95,7 @@ const getProcessId = async plate => {
             console.log(err)
         })`
     )
-    await page.waitForTimeout(1000)//todo 500?
-    const processIdElement = await page.$('#processId')
-    const processId = await page.evaluate(el => el.value, processIdElement)
+    const processId = await responsePromise
     return processId
 }
 
