@@ -91,22 +91,8 @@ async function listenForMessages() {
 
     for (const message of flatMessagesPlateRequested) {
         const {plate, chat_id, user_id, user_name, user_first_name, user_last_name, user_language_code} = flatArrayToObject(message[1])
-
-        const foundResult = await chats.findOne({chat_id: parseInt(chat_id)})
         const now = new Date()
-
-        if (!foundResult) {
-            await chats.insertOne({chat_id: parseInt(chat_id), user_id: parseInt(user_id), user_name, user_first_name, user_last_name, user_language_code, plates: {[plate]: [now]}, createdBy: now})
-        } else {
-            await chats.updateOne({chat_id: parseInt(chat_id)}, {
-                $push: {
-                    [`plates.${plate}`]: now
-                },
-                $set: {
-                    user_id: parseInt(user_id), user_name, user_first_name, user_last_name, user_language_code, updatedAt: now
-                }
-            })
-        }
+        await chats.insertOne({chat_id: parseInt(chat_id), user_id: parseInt(user_id), user_name, user_first_name, user_last_name, user_language_code, request: plate, createdBy: now})
     }
 
     const flatMessagesResolved = results
@@ -143,27 +129,3 @@ async function listenForMessages() {
 }
 
 listenForMessages()
-// await redisClient.connect()
-// redisClient.on('error', (err) => console.log('Redis Client Error', err))
-// await redisSubscriber.connect()
-// redisSubscriber.on('error', (err) => console.log('Redis Subscriber Error', err))
-//
-// await redisSubscriber.pSubscribe('__keyevent*__:*', async (key) => {
-//     // console.time('upsert')
-//     const [service, plate] = key.split(':')
-//     const value = await redisClient.json.get(key)
-//     const foundResult = await plates.findOne({plate})
-//
-//     const now = new Date()
-//     if (!foundResult) {
-//         await plates.insertOne({plate, services: {[service]: {...value, updatedAt: now}}, createdBy: now})
-//     } else {
-//         await plates.updateOne({plate}, {
-//             $set: {
-//                 [`services.${service}`]: {...value, updatedAt: now},
-//                 updatedAt: now
-//             }
-//         })
-//     }
-//     // console.timeEnd('upsert')
-// })
