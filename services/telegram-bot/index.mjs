@@ -236,12 +236,12 @@ async function listenForMessages() {
                 break
             case 'ingos':
                 await bot.telegram.sendMessage(chat_id, '<b>ДОКУМЕНТЫ</b>', {parse_mode: 'HTML'})
-                if (serviceObj?.documents?.length) {
+                if (serviceObj.documents?.length) {
                     for(const document of serviceObj.documents){
                         await bot.telegram.sendMessage(chat_id, `${document.type.name}: ${document.number} от ${document.date.substring(0, 10)}`)
                     }
                 }
-                if (serviceObj?.identifiers?.length) {
+                if (serviceObj.identifiers?.length) {
                     for(const identifier of serviceObj.identifiers){
                         await bot.telegram.sendMessage(chat_id, `${identifier.type.name}: ${identifier.number}`)
                     }
