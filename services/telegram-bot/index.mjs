@@ -93,7 +93,7 @@ bot.command('cache', async ctx => {
     const param = text.split(' ')[1]
     const cache = ['on', 'true', '1', 'yes', 'enable'].includes(param.toLowerCase())
     await redisPub.call('JSON.SET', `chat:${chat.id}`, '$', JSON.stringify({cache}))
-    if(cache){
+    if (cache) {
         await ctx.reply('Cache enabled')
     } else {
         await ctx.reply('Cache disabled')
@@ -235,8 +235,17 @@ async function listenForMessages() {
                 }
                 break
             case 'ingos':
-                await bot.telegram.sendMessage(chat_id, '<b>INGOS</b>', {parse_mode: 'HTML'})
-                await bot.telegram.sendMessage(chat_id, JSON.stringify(serviceObj, null, 2))
+                await bot.telegram.sendMessage(chat_id, '<b>ДОКУМЕНТЫ</b>', {parse_mode: 'HTML'})
+                if (serviceObj?.documents?.length) {
+                    for(const document of serviceObj.documents){
+                        await bot.telegram.sendMessage(chat_id, `${document.type.name}: ${document.number} от ${document.date.substring(0, 10)}`)
+                    }
+                }
+                if (serviceObj?.identifiers?.length) {
+                    for(const identifier of serviceObj.identifiers){
+                        await bot.telegram.sendMessage(chat_id, `${identifier.type.name}: ${identifier.number}`)
+                    }
+                }
         }
     }
 
