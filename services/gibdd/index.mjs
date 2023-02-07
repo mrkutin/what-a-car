@@ -66,7 +66,6 @@ async function listenForMessages(/*lastId = '$'*/) {
         '>',
         '>')
 
-    const chatSettings = JSON.parse(await redisPub.call('JSON.GET', `chat:${chat_id}`))
 
     //only messages with STS
     const flatMessagesWithSts = results
@@ -76,6 +75,7 @@ async function listenForMessages(/*lastId = '$'*/) {
         }, [])
     for (const message of flatMessagesWithSts) {
         const {key, chat_id, plate} = flatArrayToObject(message[1])
+        const chatSettings = JSON.parse(await redisPub.call('JSON.GET', `chat:${chat_id}`))
         const messageObj = JSON.parse(await redisPub.call('JSON.GET', key))//object with vin field
         const [service, ] = key.split(':')
 
@@ -89,13 +89,22 @@ async function listenForMessages(/*lastId = '$'*/) {
 
         if(sts){
             const key = `fines:${plate}:${sts}`
-            const value = JSON.parse(await redisPub.call('JSON.GET', key))
-            if (!value || chatSettings?.cache === false) {
-                const fines = await getFinesByPlateAndSts(plate, sts)
-                await redisPub.call('JSON.SET', key, '$', JSON.stringify({fines}))
-                await redisPub.expire(key, REDIS_EXPIRATION_SEC)
+
+            //debounce
+            const history = await redisPub.xrevrange('stream:fines:resolved', '+', Date.now() - 10000, 'COUNT', '100')
+            const idx = history.findIndex(message => {
+                const {key: history_key, chat_id: history_chat_id} = flatArrayToObject(message[1])
+                return key === history_key && chat_id === history_chat_id
+            })
+            if (idx === -1) {
+                const value = JSON.parse(await redisPub.call('JSON.GET', key))
+                if (!value || chatSettings?.cache === false) {
+                    const fines = await getFinesByPlateAndSts(plate, sts)
+                    await redisPub.call('JSON.SET', key, '$', JSON.stringify({fines}))
+                    await redisPub.expire(key, REDIS_EXPIRATION_SEC)
+                }
+                await redisPub.xadd('stream:fines:resolved', '*', 'key', key, 'chat_id', chat_id, 'plate', plate)
             }
-            await redisPub.xadd('stream:fines:resolved', '*', 'key', key, 'chat_id', chat_id, 'plate', plate)
         }
     }
 
@@ -106,11 +115,16 @@ async function listenForMessages(/*lastId = '$'*/) {
         }, [])
     for (const message of flatMessages) {
         const {key, chat_id, plate} = flatArrayToObject(message[1])
+        const chatSettings = JSON.parse(await redisPub.call('JSON.GET', `chat:${chat_id}`))
         const messageObj = JSON.parse(await redisPub.call('JSON.GET', key))//object with vin field
+        const [service, ] = key.split(':')
 
         let vin = null
         if(service === 'sravni' && messageObj?.vin) {
-            vin = `${messageObj.carDocument.series}${messageObj.carDocument.number}`
+            vin = messageObj.vin
+        }
+        if(service === 'autoins' && messageObj?.vin) {
+            vin = messageObj.vin
         }
         if(service === 'ingos' && messageObj?.identifiers?.length) {
             vin = messageObj.identifiers.find(identifier => identifier.type.name === 'VIN')?.number
