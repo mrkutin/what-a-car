@@ -177,7 +177,7 @@ async function listenForMessages() {
         let serviceObj = JSON.parse(await redisPub.call('JSON.GET', key))
         switch (service) {
             case 'sravni':
-                if (serviceObj.carDocument) {
+                if (serviceObj?.carDocument?.series && serviceObj?.carDocument?.number) {
                     await bot.telegram.sendMessage(chat_id, '<b>СТС</b>', {parse_mode: 'HTML'})
                     await bot.telegram.sendMessage(chat_id, `${serviceObj.carDocument.series || ''} ${serviceObj.carDocument.number || ''}${serviceObj.carDocument.date ? ` от ${serviceObj.carDocument.date?.substring(0, 10)}` : ''}`)
                     // await bot.telegram.sendMessage(chat_id, `Название: ${serviceObj?.brand?.name} ${serviceObj?.model?.name}`)
@@ -187,7 +187,7 @@ async function listenForMessages() {
                 }
                 break
             case 'autoins':
-                if (serviceObj.policyId) {
+                if (serviceObj?.policyId) {
                     await bot.telegram.sendMessage(chat_id, '<b>ОСАГО</b>', {parse_mode: 'HTML'})
                     await bot.telegram.sendMessage(chat_id, `Номер: ${serviceObj.licensePlate || ''}`)
                     await bot.telegram.sendMessage(chat_id, `VIN: ${serviceObj.vin || ''}`)
@@ -204,7 +204,7 @@ async function listenForMessages() {
                 }
                 break
             case 'gibdd':
-                if (serviceObj.vehicle) {
+                if (serviceObj?.vehicle) {
                     await bot.telegram.sendMessage(chat_id, '<b>АВТОМОБИЛЬ</b>', {parse_mode: 'HTML'})
                     await bot.telegram.sendMessage(chat_id, `VIN: ${serviceObj.vehicle.vin || ''}`)
                     await bot.telegram.sendMessage(chat_id, `Название: ${serviceObj.vehicle.model || ''}`)
@@ -217,45 +217,49 @@ async function listenForMessages() {
                     await bot.telegram.sendMessage(chat_id, `Мощность двигателя: ${serviceObj.vehicle.powerHp ? `${serviceObj.vehicle.powerHp} л.с.` : ''}`)
                 }
 
-                if (serviceObj.ownershipPeriods?.length) {
+                if (serviceObj?.ownershipPeriods?.length) {
                     await bot.telegram.sendMessage(chat_id, '<b>РЕГИСТРАЦИОННЫЕ ДЕЙСТВИЯ</b>', {parse_mode: 'HTML'})
                     for (const period of serviceObj.ownershipPeriods) {
                         await bot.telegram.sendMessage(chat_id, `С ${period.from} по ${period.to || 'настоящее время'}: ${period.ownerType}, ${period.operation}`)
                     }
                 }
 
-                if (serviceObj.accidents?.length) {
-                    await bot.telegram.sendMessage(chat_id, '<b>УЧАСТИЕ в ДТП</b>', {parse_mode: 'HTML'})
+                await bot.telegram.sendMessage(chat_id, '<b>УЧАСТИЕ в ДТП</b>', {parse_mode: 'HTML'})
+                if (serviceObj?.accidents?.length) {
+                    await bot.telegram.sendMessage(chat_id, `(Всего <b>${serviceObj.accidents.length}</b>)`, {parse_mode: 'HTML'})
                     for (const accident of serviceObj.accidents) {
                         await bot.telegram.sendMessage(chat_id, `${accident.AccidentDateTime || ''} ${accident.AccidentPlace || ''}, ${accident.AccidentType ? accident.AccidentType.toLowerCase() : ''}, количество участников: ${accident.VehicleAmount || ''}${accident?.DamagePoints?.length ? `, повреждения: ${accident?.DamagePoints.join(', ')}` : ''}`)
                     }
+                } else {
+                    await bot.telegram.sendMessage(chat_id, 'не зафиксировано')
                 }
                 break
             case 'fines':
                 await bot.telegram.sendMessage(chat_id, '<b>ШТРАФЫ</b>', {parse_mode: 'HTML'})
-                if (serviceObj.fines?.length) {
+                if (serviceObj?.fines?.length) {
+                    await bot.telegram.sendMessage(chat_id, `(Всего <b>${serviceObj.fines.length}</b> на сумму <b>${serviceObj.fines.reduce((acc, fine) => acc + (isNaN(parseInt(fine.Summa)) ? 0 : parseInt(fine.Summa)), 0)}</b> руб.)`, {parse_mode: 'HTML'})
                     for (const fine of serviceObj.fines) {
                         await bot.telegram.sendMessage(chat_id, `${fine.DateDecis || ''} <b>${fine.Summa || 0} руб.</b>${fine.enableDiscount ? ` (можно оплатить со скидкой до ${fine.DateDiscount})` : ''}, ${fine.KoAPcode || ''}, ${fine.KoAPtext || ''}, ${fine.division?.name ? `${fine.division.name}` : ''}${fine.division?.fulladdr ? `, ${fine.division.fulladdr}` : ''}`, {parse_mode: 'HTML'})
                     }
                 } else {
-                    await bot.telegram.sendMessage(chat_id, 'не найдены')
+                    await bot.telegram.sendMessage(chat_id, 'не зафиксированы')
                 }
                 break
             case 'ingos':
                 await bot.telegram.sendMessage(chat_id, '<b>ДОКУМЕНТЫ</b>', {parse_mode: 'HTML'})
-                if (serviceObj.documents?.length) {
+                if (serviceObj?.documents?.length) {
                     for(const document of serviceObj.documents){
                         await bot.telegram.sendMessage(chat_id, `${document.type.name || ''}: ${document.number || ''} от ${document.date.substring(0, 10)}`)
                     }
                 }
-                if (serviceObj.identifiers?.length) {
+                if (serviceObj?.identifiers?.length) {
                     for(const identifier of serviceObj.identifiers){
                         await bot.telegram.sendMessage(chat_id, `${identifier.type.name || ''}: ${identifier.number || ''}`)
                     }
                 }
                 break
             case 'mosreg':
-                if (serviceObj.length) {
+                if (serviceObj?.length) {
                     await bot.telegram.sendMessage(chat_id, '<b>МОСКОВСКОЕ ТАКСИ</b>', {parse_mode: 'HTML'})
                     await bot.telegram.sendMessage(chat_id, JSON.stringify(serviceObj))
                 }
