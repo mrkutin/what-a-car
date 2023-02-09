@@ -1,5 +1,6 @@
 const MONGO_HOST = process.env.MONGO_HOST || 'mongodb://root:root@0.0.0.0:27017'
 const REDIS_HOST = process.env.REDIS_HOST || 'redis://0.0.0.0:6379'
+const HEARTBEAT_INTERVAL = parseInt(process.env.HEARTBEAT_INTERVAL || 1000)
 
 import {MongoClient} from 'mongodb'
 
@@ -61,15 +62,17 @@ const flatArrayToObject = arr => {
     return obj
 }
 
+const hostId = makeId(7)
+
 async function listenForMessages() {
     const results = await redisSub.xreadgroup(
         'GROUP',
         'storage',
-        makeId(7),
+        hostId,
         'BLOCK',
-        '0',
+        HEARTBEAT_INTERVAL,
         'COUNT',
-        '10',
+        10,
         'STREAMS',
         'stream:sravni:resolved',
         'stream:autoins:resolved',
@@ -82,6 +85,11 @@ async function listenForMessages() {
         '>',
         '>'
     )
+
+    await redisPub.set(`heartbeat:storage:${hostId}`, 1, 'PX', 2 * HEARTBEAT_INTERVAL)
+    if(!results?.length){
+        return await listenForMessages()
+    }
 
     const flatMessagesPlateRequested = results
         .filter(([stream]) => stream === 'stream:plate:requested')

@@ -1,5 +1,8 @@
 // блочат по IP если было больше 2 новых сессий, поэтому делаем все в одной сессии
 const REDIS_HOST = process.env.REDIS_HOST || 'redis://0.0.0.0:6379'
+const REDIS_EXPIRATION_SEC = parseInt(process.env.REDIS_EXPIRATION_SEC || (3600 * 24 * 7)) // 1 week
+const HEARTBEAT_INTERVAL = parseInt(process.env.HEARTBEAT_INTERVAL || 1000)
+
 //const COOKIES_FILE = './cookies.json'
 
 import Redis from 'ioredis'
@@ -72,8 +75,15 @@ const flatArrayToObject = arr => {
     return obj
 }
 
+const hostId = makeId(7)
+
 async function listenForMessages(/*lastId = '$'*/) {
-    const results = await redisSub.xreadgroup('GROUP', 'autoins', makeId(7), 'BLOCK', '0', 'COUNT', '1', 'STREAMS', 'stream:plate:requested', '>')
+    const results = await redisSub.xreadgroup('GROUP', 'autoins', hostId, 'BLOCK', HEARTBEAT_INTERVAL, 'COUNT', 1, 'STREAMS', 'stream:plate:requested', '>')
+
+    await redisPub.set(`heartbeat:autoins:${hostId}`, 1, 'PX', 2 * HEARTBEAT_INTERVAL)
+    if(!results?.length){
+        return await listenForMessages()
+    }
 
     const flatMessages = results.reduce((acc, result) => {
         return acc.concat(result[1])//messages
@@ -87,7 +97,7 @@ async function listenForMessages(/*lastId = '$'*/) {
             if (!value) {
                 value = await getInsuranceByPlate(page, messageObj.plate)
                 await redisPub.call('JSON.SET', key, '$', JSON.stringify(value))
-                //todo expire
+                await redisPub.expire(key, REDIS_EXPIRATION_SEC)
             }
             await redisPub.xadd('stream:autoins:resolved', '*', 'key', key, 'chat_id', messageObj.chat_id, 'plate', messageObj.plate)
         }

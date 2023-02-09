@@ -106,6 +106,24 @@ bot.command('cache', async ctx => {
 
 })
 
+bot.command('health', async ctx => {
+    const keys = await redisPub.keys('heartbeat:*')
+
+    const groupedKeys = keys.reduce((acc, key) => {
+        const [, service, host] = key.split(':')
+        if(!acc[service]){
+            acc[service] = [host]
+        } else {
+            acc[service].push(host)
+        }
+        return acc
+    }, {})
+
+    for (const service in groupedKeys) {
+        await ctx.reply(`${service}: ${groupedKeys[service].length} OK`)
+    }
+})
+
 bot.on(message('text'), async ctx => {
     const {update} = ctx
     const {message} = update
@@ -248,12 +266,12 @@ async function listenForMessages() {
             case 'ingos':
                 await bot.telegram.sendMessage(chat_id, '<b>ДОКУМЕНТЫ</b>', {parse_mode: 'HTML'})
                 if (serviceObj?.documents?.length) {
-                    for(const document of serviceObj.documents){
+                    for (const document of serviceObj.documents) {
                         await bot.telegram.sendMessage(chat_id, `${document.type.name || ''}: ${document.number || ''} от ${document.date.substring(0, 10)}`)
                     }
                 }
                 if (serviceObj?.identifiers?.length) {
-                    for(const identifier of serviceObj.identifiers){
+                    for (const identifier of serviceObj.identifiers) {
                         await bot.telegram.sendMessage(chat_id, `${identifier.type.name || ''}: ${identifier.number || ''}`)
                     }
                 }

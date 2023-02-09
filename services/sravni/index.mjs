@@ -1,6 +1,7 @@
 //блочат, если нет кук
 const REDIS_HOST = process.env.REDIS_HOST || 'redis://0.0.0.0:6379'
-const REDIS_EXPIRATION_SEC = parseInt(process.env.REDIS_EXPIRATION_SEC || 86400)
+const REDIS_EXPIRATION_SEC = parseInt(process.env.REDIS_EXPIRATION_SEC || (3600 * 24 * 7)) // 1 week
+const HEARTBEAT_INTERVAL = parseInt(process.env.HEARTBEAT_INTERVAL || 1000)
 
 import Redis from 'ioredis'
 
@@ -34,8 +35,15 @@ const flatArrayToObject = arr => {
     return obj
 }
 
+const hostId = makeId(7)
+
 async function listenForMessages(/*lastId = '$'*/) {
-    const results = await redisSub.xreadgroup('GROUP', 'sravni', makeId(7), 'BLOCK', '0', 'COUNT', '1', 'STREAMS', 'stream:plate:requested', '>')
+    const results = await redisSub.xreadgroup('GROUP', 'sravni', hostId, 'BLOCK', HEARTBEAT_INTERVAL, 'COUNT', 1, 'STREAMS', 'stream:plate:requested', '>')
+
+    await redisPub.set(`heartbeat:sravni:${hostId}`, 1, 'PX', 2 * HEARTBEAT_INTERVAL)
+    if(!results?.length){
+        return await listenForMessages()
+    }
 
     const flatMessages = results.reduce((acc, result) => {
         return acc.concat(result[1])//messages
