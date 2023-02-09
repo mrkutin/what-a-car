@@ -1,6 +1,8 @@
 const REDIS_HOST = process.env.REDIS_HOST || 'redis://0.0.0.0:6379'
 const REDIS_EXPIRATION_SEC = parseInt(process.env.REDIS_EXPIRATION_SEC || (3600 * 24 * 7)) // 1 week
-const HEARTBEAT_INTERVAL = parseInt(process.env.HEARTBEAT_INTERVAL || 1000)
+const HEARTBEAT_INTERVAL_MS = parseInt(process.env.HEARTBEAT_INTERVAL_MS || 1000)
+const DEBOUCE_INTERVAL_MS = parseInt(process.env.DEBOUCE_INTERVAL_MS || 10000)
+const DEBOUCE_COUNT = parseInt(process.env.DEBOUCE_COUNT || 100)
 
 import Redis from 'ioredis'
 
@@ -58,7 +60,7 @@ async function listenForMessages(/*lastId = '$'*/) {
         'gibdd',
         hostId,
         'BLOCK',
-        HEARTBEAT_INTERVAL,
+        HEARTBEAT_INTERVAL_MS,
         'COUNT',
         1,
         'STREAMS',
@@ -69,7 +71,7 @@ async function listenForMessages(/*lastId = '$'*/) {
         '>',
         '>')
 
-    await redisPub.set(`heartbeat:gibdd:${hostId}`, 1, 'PX', 2 * HEARTBEAT_INTERVAL)
+    await redisPub.set(`heartbeat:gibdd:${hostId}`, 1, 'PX', 2 * HEARTBEAT_INTERVAL_MS)
     if(!results?.length){
         return await listenForMessages()
     }
@@ -98,7 +100,7 @@ async function listenForMessages(/*lastId = '$'*/) {
             const key = `fines:${plate}:${sts}`
 
             //debounce
-            const history = await redisPub.xrevrange('stream:fines:resolved', '+', Date.now() - 10000, 'COUNT', '100')
+            const history = await redisPub.xrevrange('stream:fines:resolved', '+', Date.now() - DEBOUCE_INTERVAL_MS, 'COUNT', DEBOUCE_COUNT)
             const idx = history.findIndex(message => {
                 const {key: history_key, chat_id: history_chat_id} = flatArrayToObject(message[1])
                 return key === history_key && chat_id === history_chat_id
@@ -141,7 +143,7 @@ async function listenForMessages(/*lastId = '$'*/) {
             const key = `gibdd:${vin}`
 
             //debounce
-            const history = await redisPub.xrevrange('stream:gibdd:resolved', '+', Date.now() - 10000, 'COUNT', '100')
+            const history = await redisPub.xrevrange('stream:gibdd:resolved', '+', Date.now() - DEBOUCE_INTERVAL_MS, 'COUNT', DEBOUCE_COUNT)
             const idx = history.findIndex(message => {
                 const {key: history_key, chat_id: history_chat_id} = flatArrayToObject(message[1])
                 return key === history_key && chat_id === history_chat_id

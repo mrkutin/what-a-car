@@ -1,6 +1,6 @@
 const MONGO_HOST = process.env.MONGO_HOST || 'mongodb://root:root@0.0.0.0:27017'
 const REDIS_HOST = process.env.REDIS_HOST || 'redis://0.0.0.0:6379'
-const HEARTBEAT_INTERVAL = parseInt(process.env.HEARTBEAT_INTERVAL || 1000)
+const HEARTBEAT_INTERVAL_MS = parseInt(process.env.HEARTBEAT_INTERVAL_MS || 1000)
 
 import {MongoClient} from 'mongodb'
 
@@ -70,7 +70,7 @@ async function listenForMessages() {
         'storage',
         hostId,
         'BLOCK',
-        HEARTBEAT_INTERVAL,
+        HEARTBEAT_INTERVAL_MS,
         'COUNT',
         10,
         'STREAMS',
@@ -86,7 +86,7 @@ async function listenForMessages() {
         '>'
     )
 
-    await redisPub.set(`heartbeat:storage:${hostId}`, 1, 'PX', 2 * HEARTBEAT_INTERVAL)
+    await redisPub.set(`heartbeat:storage:${hostId}`, 1, 'PX', 2 * HEARTBEAT_INTERVAL_MS)
     if(!results?.length){
         return await listenForMessages()
     }
