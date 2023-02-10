@@ -267,7 +267,7 @@ async function listenForMessages() {
                 await bot.telegram.sendMessage(chat_id, '<b>ДОКУМЕНТЫ</b>', {parse_mode: 'HTML'})
                 if (serviceObj?.documents?.length) {
                     for (const document of serviceObj.documents) {
-                        await bot.telegram.sendMessage(chat_id, `${document.type.name || ''}: ${document.number || ''} от ${document.date.substring(0, 10)}`)
+                        await bot.telegram.sendMessage(chat_id, `${document.type.name || ''}: ${document.number || ''} ${document.date?.length ? `от ${document.date.substring(0, 10)}` : ''}`)
                     }
                 }
                 if (serviceObj?.identifiers?.length) {
@@ -278,8 +278,19 @@ async function listenForMessages() {
                 break
             case 'mosreg':
                 if (serviceObj?.length) {
-                    await bot.telegram.sendMessage(chat_id, '<b>МОСКОВСКОЕ ТАКСИ</b>', {parse_mode: 'HTML'})
-                    await bot.telegram.sendMessage(chat_id, JSON.stringify(serviceObj))
+                    await bot.telegram.sendMessage(chat_id, '<b>ТАКСИ</b>', {parse_mode: 'HTML'})
+                    for (const record of serviceObj) {
+                        const entries = []
+                        record.info?.regNumber && entries.push(`Разрешение №${record.info.regNumber}`)
+                        record.info?.startDate && entries.push(`с ${record.info.startDate}`)
+                        record.info?.expireDate && entries.push(`по ${record.info.expireDate}`)
+                        record.info?.status && entries.push(`<b>${record.info.status.toLowerCase()}</b>`)
+                        record.ownerInfo?.name && entries.push(`${record.ownerInfo.name}`)
+                        record.ownerInfo?.inn && entries.push(`ИНН ${record.ownerInfo.inn}`)
+                        record.ownerInfo?.ogrn && entries.push(`ОГРН ${record.ownerInfo.ogrn}`)
+                        record.ownerInfo?.addInfo && entries.push(`${record.ownerInfo.addInfo.replace(/<[^>]*>/g, '')}`)
+                        await bot.telegram.sendMessage(chat_id, entries.join(', '), {parse_mode: 'HTML'})
+                    }
                 }
                 break
         }

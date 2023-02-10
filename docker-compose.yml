@@ -70,6 +70,16 @@ services:
       REDIS_HOST: redis://redis:6379
       REDIS_EXPIRATION_SEC: 604800
       CAPTCHA_SOLVER_URL: http://gibdd-captcha-solver:8080
+  mosreg:
+    depends_on:
+      - redis
+    build:
+      context: services/mosreg/
+    image: itlaboratory/what-a-car-mosreg
+    restart: on-failure
+    environment:
+      REDIS_HOST: redis://redis:6379
+      REDIS_EXPIRATION_SEC: 604800
   storage:
     build:
       context: services/storage/

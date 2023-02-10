@@ -17,13 +17,18 @@ const browser = await puppeteer.launch({
 
 const page = await browser.newPage()
 const getTaxiRegByPlate = async plate => {
-    await page.goto(`https://mtdi.mosreg.ru/deyatelnost/celevye-programmy/taksi1/proverka-razresheniya-na-rabotu-taksi?number=${plate}&name=&id=&region=ALL`)
+    await page.goto(`https://mtdi.mosreg.ru/deyatelnost/celevye-programmy/taksi1/proverka-razresheniya-na-rabotu-taksi?number=${plate}&name=&id=&region=ALL`,
+        {waitUntil: 'domcontentloaded'}
+    )
     await page.waitForNetworkIdle()
     const scriptText = await page.evaluate(() => {
-       return Array.from(document.querySelectorAll('script')).find(el => el.outerHTML.includes('result')).outerHTML
+        return Array.from(document.querySelectorAll('script')).find(el => el.outerHTML.includes('new Vue')).outerHTML
     })
 
-    return JSON.parse(scriptText.split('result: ')[1].split(',\n')[0])
+    const extractedText = scriptText.split('result: ')[1].split('error:')[0].trim().slice(0, -1)
+    const json = JSON.parse(extractedText)
+
+    return json
 }
 
 // let carInfo = await getTaxiRegByPlate('О189ХУ750')
