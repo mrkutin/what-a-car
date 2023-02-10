@@ -1,50 +1,25 @@
-//const COOKIES_FILE = './cookies.json'
+import {getProcessId} from './getProcessId.mjs'
+import {waitForProcess} from './waitForProcess.mjs'
+import {getProcessedInsurance} from './getProcessedInsurance.mjs'
 
-//import fs from 'fs'
-import headers from './headers.mjs'
-
-const getInsuranceByPlate = async (page, plate) => {
-    await page.waitForSelector('#tsBlockTab', {timeout: 5000})
-    await page.click('#tsBlockTab')
-
-    await page.focus('#licensePlate')
-    await page.keyboard.type(plate)
-
-    await page.click('#buttonFind')
-
-    await page.waitForNavigation()
-
-    const texts = await page.evaluate(() => Array.from(document.querySelectorAll('tr.data-row > td')).map(el => el.innerText))
-
-    await page.waitForSelector('#buttonBack')
-    await page.click('#buttonBack')
-
-    // const cookies = await page.cookies()
-    // fs.writeFileSync(COOKIES_FILE, JSON.stringify(cookies, null, 2), {encoding: 'utf8'})
-
-    const flattenedTexts = texts.map(el => el.split('\n').map(el => {
-        const split = el.split('\t')
-        return split[1] || split[0]
-    })).flat(2)
-
-    if (!flattenedTexts.length)
+const getInsuranceByPlate = async plate => {
+    console.log('plate: ', plate)
+    const {processId, cookies} = await getProcessId(plate)
+    if (!processId) {
         return null
-
-    //to remove duplicate vins
-    if ((flattenedTexts[7] === flattenedTexts[8]) || (flattenedTexts[7] === 'Сведения отсутствуют')) {
-        flattenedTexts.splice(7, 1)
     }
-
-    const autoins = flattenedTexts.reduce((acc, text, idx) => {
-        acc[headers[idx]] = text
-        return acc
-    }, {})
-
-    return autoins
-
+    console.log('processId: ', processId)
+    const found = await waitForProcess(processId, cookies)
+    if(found){
+        const autoins = await getProcessedInsurance(processId, cookies)
+        console.log('autoins: ', autoins)
+        return autoins
+    }
+    console.log('not found')
+    return null
 }
 
-// const insurance = await getInsuranceByPlate(null, 'м506ур77')
-// console.log(insurance)
+// await getInsuranceByPlate('С137УН799')
+// await getInsuranceByPlate('М121АХ750')
 
 export {getInsuranceByPlate}

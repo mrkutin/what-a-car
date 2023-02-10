@@ -2,7 +2,7 @@ import axios from 'axios'
 import * as cheerio from 'cheerio'
 import headers from './headers.mjs'
 
-const getProcessedInsurance = async processId => {
+const getProcessedInsurance = async (processId, cookies) => {
     try {
         const res = await axios.post(`https://dkbm-web.autoins.ru/dkbm-web-1.0/policyInfoData.htm`, `processId=${processId}`)
         const $ = await cheerio.load(res.data, {

@@ -1,3 +1,5 @@
+const PROXY = process.env.PROXY || 'socks5://190.2.155.30:21551'
+
 import querystring from 'node:querystring'
 import moment from 'moment'
 
@@ -8,28 +10,25 @@ import StealthPlugin from 'puppeteer-extra-plugin-stealth'
 
 puppeteer.use(StealthPlugin())
 
+import AnonymizePlugin from 'puppeteer-extra-plugin-anonymize-ua'
+
+puppeteer.use(AnonymizePlugin())
+
 const browser = await puppeteer.launch({
     headless: true,
     executablePath: executablePath(),
     defaultViewport: {
         width: 1920, height: 1080
     },
-    args: ['--no-sandbox', '--disable-setuid-sandbox']
-    //args: [ '--proxy-server=http://80.244.229.102:10000' ]
+    args: ['--no-sandbox', '--disable-setuid-sandbox', '--proxy-server=socks5://190.2.155.30:21551']
 })
 
 const page = await browser.newPage()
-const cookies = [
-    {name: '_ym_d', value: '1674402333', domain: '.autoins.ru'},
-    {name: '_ym_isad', value: '2', domain: '.autoins.ru'},
-    {name: '_ym_uid', value: '1674402333885302806', domain: '.autoins.ru'},
-    {name: 'JSESSIONID', value: 'B47E6AAB149D3251D704AEAF12A45F53', domain: 'dkbm-web.autoins.ru'}
-]
-
-await page.setCookie(...cookies)
-await page.goto('https://dkbm-web.autoins.ru/dkbm-web-1.0/policyInfo.htm')
-
-await page.waitForSelector('#tsBlockTab', {timeout: 5000})
+await page.goto('https://dkbm-web.autoins.ru/dkbm-web-1.0/policyInfo.htm',
+    //{waitUntil: 'domcontentloaded'}
+    {waitUntil: 'networkidle0'}
+)
+await page.waitForSelector('#tsBlockTab')
 await page.click('#tsBlockTab')
 
 const getProcessId = async plate => {
@@ -97,8 +96,11 @@ const getProcessId = async plate => {
             console.log(err)
         })`
     )
+
     const processId = await responsePromise
-    return processId
+    const cookies = await page.cookies()
+
+    return {processId, cookies}
 }
 
 export {getProcessId}
