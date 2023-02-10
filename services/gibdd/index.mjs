@@ -1,7 +1,7 @@
 const REDIS_HOST = process.env.REDIS_HOST || 'redis://0.0.0.0:6379'
 const REDIS_EXPIRATION_SEC = parseInt(process.env.REDIS_EXPIRATION_SEC || (3600 * 24 * 7)) // 1 week
 const HEARTBEAT_INTERVAL_MS = parseInt(process.env.HEARTBEAT_INTERVAL_MS || 1000)
-const DEBOUCE_INTERVAL_MS = parseInt(process.env.DEBOUCE_INTERVAL_MS || 10000)
+const DEBOUCE_INTERVAL_MS = parseInt(process.env.DEBOUCE_INTERVAL_MS || 20000)
 const DEBOUCE_COUNT = parseInt(process.env.DEBOUCE_COUNT || 100)
 
 import Redis from 'ioredis'
@@ -97,7 +97,7 @@ async function listenForMessages(/*lastId = '$'*/) {
         }
 
         if(sts){
-            const key = `fines:${plate}:${sts}`
+            const key = `fines:${plate.replace(/ /g, '')}:${sts.replace(/ /g, '')}`
 
             //debounce
             const history = await redisPub.xrevrange('stream:fines:resolved', '+', Date.now() - DEBOUCE_INTERVAL_MS, 'COUNT', DEBOUCE_COUNT)
