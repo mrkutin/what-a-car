@@ -4,7 +4,11 @@ import headers from './headers.mjs'
 
 const getProcessedInsurance = async (processId, cookies) => {
     try {
-        const res = await axios.post(`https://dkbm-web.autoins.ru/dkbm-web-1.0/policyInfoData.htm`, `processId=${processId}`)
+        const res = await axios.post(`https://dkbm-web.autoins.ru/dkbm-web-1.0/policyInfoData.htm`, `processId=${processId}`, {
+            headers: {
+                Cookie: cookies.map(cookie => `${cookie.name}=${cookie.value}`).join(';')
+            }
+        })
         const $ = await cheerio.load(res.data, {
             xml: {
                 xmlMode: true,
