@@ -36,10 +36,10 @@ const getProcessId = async plate => {
         page.on('response', async (response) => {
             if (response.request().url().includes('policyInfo.htm')) {
                 const text = await response.text()
-                console.log(text)
+                console.log('Parsed text: ', text)
                 const json = await response.json()
-                if(!json?.processId){
-                    resolve(null)
+                if(!json?.processId ){
+                    reject(json.errorMessage || 'Error while getting process id')
                 }
                 resolve(json.processId)
             }
