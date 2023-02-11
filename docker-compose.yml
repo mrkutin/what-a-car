@@ -70,6 +70,7 @@ services:
       REDIS_HOST: redis://redis:6379
       REDIS_EXPIRATION_SEC: 604800
       CAPTCHA_SOLVER_URL: http://gibdd-captcha-solver:8080
+      DEBOUCE_INTERVAL_MS: 60000
   mosreg:
     depends_on:
       - redis

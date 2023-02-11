@@ -1,25 +1,70 @@
-import {getProcessId} from './getProcessId.mjs'
-import {waitForProcess} from './waitForProcess.mjs'
-import {getProcessedInsurance} from './getProcessedInsurance.mjs'
+const PROXY = process.env.PROXY || 'socks5://190.2.155.30:21551'
 
-const getInsuranceByPlate = async plate => {
-    console.log('plate: ', plate)
-    const {processId, cookies} = await getProcessId(plate)
-    if (!processId) {
+import puppeteer from 'puppeteer-extra'
+import {executablePath} from 'puppeteer'
+
+import StealthPlugin from 'puppeteer-extra-plugin-stealth'
+
+puppeteer.use(StealthPlugin())
+
+import AnonymizePlugin from 'puppeteer-extra-plugin-anonymize-ua'
+
+puppeteer.use(AnonymizePlugin())
+
+import headers from './headers.mjs'
+
+const getInsuranceByPlate = async (plate) => {
+    console.log(`plate: ${plate}`)
+
+    const browser = await puppeteer.launch({
+        headless: true,
+        executablePath: executablePath(),
+        defaultViewport: {
+            width: 1920, height: 1080
+        },
+        args: ['--no-sandbox', '--disable-setuid-sandbox', `--proxy-server=${PROXY}`]
+    })
+
+    const page = await browser.newPage()
+    await page.goto('https://dkbm-web.autoins.ru/dkbm-web-1.0/policyInfo.htm', {waitUntil: 'domcontentloaded'})
+
+    await page.waitForSelector('#tsBlockTab', {timeout: 5000})
+    await page.click('#tsBlockTab')
+
+    await page.focus('#licensePlate')
+    await page.keyboard.type(plate)
+
+    await page.click('#buttonFind')
+    await page.waitForNavigation()
+
+    const texts = await page.evaluate(() => Array.from(document.querySelectorAll('tr.data-row > td')).map(el => el.innerText))
+
+    const flattenedTexts = texts.map(el => el.split('\n').map(el => {
+        const split = el.split('\t')
+        return split[1] || split[0]
+    })).flat(2)
+
+    if (!flattenedTexts.length)
         return null
+
+    //to remove duplicate vins
+    if ((flattenedTexts[7] === flattenedTexts[8]) || (flattenedTexts[7] === 'Сведения отсутствуют')) {
+        flattenedTexts.splice(7, 1)
     }
-    console.log('processId: ', processId)
-    const found = await waitForProcess(processId, cookies)
-    if(found){
-        const autoins = await getProcessedInsurance(processId, cookies)
-        console.log('autoins: ', autoins)
-        return autoins
-    }
-    console.log('not found')
-    return null
+
+    const autoins = flattenedTexts.reduce((acc, text, idx) => {
+        acc[headers[idx]] = text
+        return acc
+    }, {})
+
+    await browser.close()
+
+    console.log(`autoins: ${JSON.stringify(autoins, null, 2)}`)
+
+    return autoins
 }
 
-// await getInsuranceByPlate('С137УН799')
-// await getInsuranceByPlate('М121АХ750')
+// const insurance = await getInsuranceByPlate('Е552МВ790')
+// console.log(insurance)
 
 export {getInsuranceByPlate}

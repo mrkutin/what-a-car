@@ -12,10 +12,10 @@ puppeteer.use(StealthPlugin())
 
 import AnonymizePlugin from 'puppeteer-extra-plugin-anonymize-ua'
 
-puppeteer.use(AnonymizePlugin())
+//puppeteer.use(AnonymizePlugin())
 
 const browser = await puppeteer.launch({
-    headless: true,
+    headless: false,
     executablePath: executablePath(),
     defaultViewport: {
         width: 1920, height: 1080
