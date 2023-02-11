@@ -191,7 +191,7 @@ async function listenForMessages() {
 
     for (const message of flatMessages) {
         const {key, chat_id} = flatArrayToObject(message[1])
-        const [service, plate] = key.split(':')
+        const [service, ] = key.split(':')
         let serviceObj = JSON.parse(await redisPub.call('JSON.GET', key))
         switch (service) {
             case 'sravni':
@@ -211,7 +211,9 @@ async function listenForMessages() {
                     await bot.telegram.sendMessage(chat_id, `VIN: ${serviceObj.vin || ''}`)
                     await bot.telegram.sendMessage(chat_id, `Автомобиль: ${serviceObj.makeAndModel || ''}`)
                     await bot.telegram.sendMessage(chat_id, `Мощность: ${serviceObj.powerHp ? `${serviceObj.powerHp} л.с.` : ''}`)
-                    await bot.telegram.sendMessage(chat_id, `Полис ОСАГО: ${serviceObj.policyId || ''} ${serviceObj.company || ''} ${serviceObj.status || ''}`)
+                    await bot.telegram.sendMessage(chat_id, `Полис: ${serviceObj.policyId || ''}`)
+                    await bot.telegram.sendMessage(chat_id, `Компания: ${serviceObj.company || ''}`)
+                    await bot.telegram.sendMessage(chat_id, `Статус: ${serviceObj.status || ''}`)
                     await bot.telegram.sendMessage(chat_id, `Цель использования: ${serviceObj.usingPurpose || ''}`)
                     await bot.telegram.sendMessage(chat_id, `${serviceObj.hasRestrictions || ''}`)
                     await bot.telegram.sendMessage(chat_id, `Собственник: ${serviceObj.vehicleOwner || ''}`)

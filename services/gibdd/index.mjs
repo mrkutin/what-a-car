@@ -89,7 +89,7 @@ async function listenForMessages(/*lastId = '$'*/) {
         const [service, ] = key.split(':')
 
         let sts = null
-        if(service === 'sravni' && messageObj?.carDocument?.series && messageObj?.carDocument?.number) {
+        if(service === 'sravni' && messageObj?.carDocument?.documentType === 'sts' && messageObj?.carDocument?.series && messageObj?.carDocument?.number) {
             sts = `${messageObj.carDocument.series}${messageObj.carDocument.number}`
         }
         if(service === 'ingos' && messageObj?.documents?.length) {
