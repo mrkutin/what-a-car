@@ -251,6 +251,32 @@ async function listenForMessages() {
                 } else {
                     await bot.telegram.sendMessage(chat_id, 'не зафиксировано')
                 }
+
+                if (serviceObj?.diagnosticCards?.length) {
+                    await bot.telegram.sendMessage(chat_id, '<b>Диагностические карты</b>', {parse_mode: 'HTML'})
+                    for (const record of serviceObj.diagnosticCards) {
+                        const entries = []
+                        record.dcNumber && entries.push(`№${record.dcNumber}`)
+                        record.dcDate && entries.push(`от ${record.dcDate}`)
+                        record.dcExpirationDate && entries.push(`до ${record.dcExpirationDate}`)
+                        record.odometerValue && entries.push(`показания одометра ${record.odometerValue}`)
+                        record.pointAddress && entries.push(`адрес пункта ТО: ${record.pointAddress}`)
+                        await bot.telegram.sendMessage(chat_id, entries.join(', '), {parse_mode: 'HTML'})
+                        if (record.previousDcs){
+                            for (const subRecord of record.previousDcs) {
+                                const entries = []
+                                subRecord.dcNumber && entries.push(`№${subRecord.dcNumber}`)
+                                subRecord.dcDate && entries.push(`от ${subRecord.dcDate}`)
+                                subRecord.dcExpirationDate && entries.push(`до ${subRecord.dcExpirationDate}`)
+                                subRecord.odometerValue && entries.push(`показания одометра ${subRecord.odometerValue}`)
+                                record.pointAddress && entries.push(`адрес пункта ТО: ${record.pointAddress}`)
+                                await bot.telegram.sendMessage(chat_id, entries.join(', '), {parse_mode: 'HTML'})
+
+                            }
+                        }
+                    }
+                }
+
                 break
             case 'fines':
                 await bot.telegram.sendMessage(chat_id, '<b>ШТРАФЫ</b>', {parse_mode: 'HTML'})
