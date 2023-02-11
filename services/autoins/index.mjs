@@ -2,6 +2,7 @@
 const REDIS_HOST = process.env.REDIS_HOST || 'redis://0.0.0.0:6379'
 const REDIS_EXPIRATION_SEC = parseInt(process.env.REDIS_EXPIRATION_SEC || (3600 * 24 * 7)) // 1 week
 const HEARTBEAT_INTERVAL_MS = parseInt(process.env.HEARTBEAT_INTERVAL_MS || 1000)
+const ATTEMPTS = parseInt(process.env.ATTEMPTS || 3)
 
 import Redis from 'ioredis'
 const redisPub = new Redis(REDIS_HOST)
@@ -56,7 +57,20 @@ async function listenForMessages(/*lastId = '$'*/) {
             const chatSettings = JSON.parse(await redisPub.call('JSON.GET', `chat:${chat_id}`))
             let value = JSON.parse(await redisPub.call('JSON.GET', key))
             if (!value || chatSettings?.cache === false) {
-                value = await getInsuranceByPlate(plate)
+                value = null
+                let attempt = 0
+                while (!value && attempt < ATTEMPTS) {
+                    try {
+                        attempt++
+                        console.log('Attempt: ', attempt)
+                        value = await getInsuranceByPlate(plate)
+                    } catch (e) {
+                        //retry in case  it's been timeouted or any other problem
+                        console.log(e.message)
+                        console.log('retrying...')
+                    }
+                }
+
                 await redisPub.call('JSON.SET', key, '$', JSON.stringify(value))
                 await redisPub.expire(key, REDIS_EXPIRATION_SEC)
             }
