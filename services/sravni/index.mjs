@@ -63,6 +63,7 @@ async function listenForMessages(/*lastId = '$'*/) {
                 await redisPub.call('JSON.SET', key, '$', JSON.stringify(value))
                 await redisPub.expire(key, REDIS_EXPIRATION_SEC)
             }
+            await redisPub.xadd('stream:sravni:resolved', '*', 'key', key, 'chat_id', chat_id, 'plate', plate)
 
             if(value.vin){
                 //debounce
@@ -76,7 +77,18 @@ async function listenForMessages(/*lastId = '$'*/) {
                 }
             }
 
-            await redisPub.xadd('stream:sravni:resolved', '*', 'key', key, 'chat_id', chat_id, 'plate', plate)
+            if(value.carDocument?.documentType === 'sts'){
+                const sts = `${value.carDocument.series}${value.carDocument.number}`
+                //debounce
+                const history = await redisPub.xrevrange('stream:sts:resolved', '+', Date.now() - DEBOUCE_INTERVAL_MS, 'COUNT', DEBOUCE_COUNT)
+                const idx = history.findIndex(message => {
+                    const {sts: history_sts, chat_id: history_chat_id} = flatArrayToObject(message[1])
+                    return sts === history_sts && chat_id === history_chat_id
+                })
+                if (idx === -1) {
+                    await redisPub.xadd('stream:sts:resolved', '*', 'sts', sts, 'chat_id', messageObj.chat_id, 'plate', plate)
+                }
+            }
         }
     }
     await listenForMessages(/*messages[messages.length - 1][0]*/)

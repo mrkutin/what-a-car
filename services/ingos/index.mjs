@@ -65,6 +65,7 @@ async function listenForMessages(/*lastId = '$'*/) {
                 await redisPub.call('JSON.SET', key, '$', JSON.stringify(value))
                 await redisPub.expire(key, REDIS_EXPIRATION_SEC)
             }
+            await redisPub.xadd('stream:ingos:resolved', '*', 'key', key, 'chat_id', chat_id, 'plate', plate)
 
             const vin = value.identifiers.find(identifier => identifier.type?.name === 'VIN')
             if(vin.number){
@@ -79,7 +80,18 @@ async function listenForMessages(/*lastId = '$'*/) {
                 }
             }
 
-            await redisPub.xadd('stream:ingos:resolved', '*', 'key', key, 'chat_id', chat_id, 'plate', plate)
+            const sts = value.documents.find(document => document.type?.name === 'СТС')
+            if(sts.number){
+                //debounce
+                const history = await redisPub.xrevrange('stream:sts:resolved', '+', Date.now() - DEBOUCE_INTERVAL_MS, 'COUNT', DEBOUCE_COUNT)
+                const idx = history.findIndex(message => {
+                    const {sts: history_sts, chat_id: history_chat_id} = flatArrayToObject(message[1])
+                    return sts.number === history_sts && chat_id === history_chat_id
+                })
+                if (idx === -1) {
+                    await redisPub.xadd('stream:sts:resolved', '*', 'sts', sts.number, 'chat_id', messageObj.chat_id, 'plate', plate)
+                }
+            }
         }
     }
     await listenForMessages(/*messages[messages.length - 1][0]*/)

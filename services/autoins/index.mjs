@@ -77,6 +77,8 @@ async function listenForMessages(/*lastId = '$'*/) {
                 await redisPub.expire(key, REDIS_EXPIRATION_SEC)
             }
 
+            await redisPub.xadd('stream:autoins:resolved', '*', 'key', key, 'chat_id', messageObj.chat_id, 'plate', plate)
+
             if(value.vin){
                 //debounce
                 const history = await redisPub.xrevrange('stream:vin:resolved', '+', Date.now() - DEBOUCE_INTERVAL_MS, 'COUNT', DEBOUCE_COUNT)
@@ -88,8 +90,6 @@ async function listenForMessages(/*lastId = '$'*/) {
                     await redisPub.xadd('stream:vin:resolved', '*', 'vin', value.vin, 'chat_id', messageObj.chat_id, 'plate', plate)
                 }
             }
-
-            await redisPub.xadd('stream:autoins:resolved', '*', 'key', key, 'chat_id', messageObj.chat_id, 'plate', plate)
         }
     }
     await listenForMessages()
