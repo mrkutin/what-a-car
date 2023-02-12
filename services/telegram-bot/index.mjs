@@ -262,7 +262,7 @@ async function listenForMessages() {
                         await bot.telegram.sendMessage(chat_id, `${restriction.ogrkod || ''}, ${restriction.divtype || ''}${restriction.dateogr ? `, с ${restriction.dateogr}` : ''}${restriction.osnOgr ? `, основание: ${restriction.osnOgr}` : ''}${restriction.phone ? `, телефон инициатора: ${restriction.phone}` : ''}${restriction.gid ? `, ключ ГИБДД: ${restriction.gid}` : ''}`)
                     }
                 } else {
-                    await bot.telegram.sendMessage(chat_id, 'не зафиксированы')
+                    await bot.telegram.sendMessage(chat_id, 'не обнаружены')
                 }
 
                 await bot.telegram.sendMessage(chat_id, '<b>Диагностические карты</b>', {parse_mode: 'HTML'})
