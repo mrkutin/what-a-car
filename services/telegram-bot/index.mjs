@@ -239,6 +239,7 @@ async function listenForMessages() {
 
                 if (serviceObj?.ownershipPeriods?.length) {
                     await bot.telegram.sendMessage(chat_id, '<b>РЕГИСТРАЦИОННЫЕ ДЕЙСТВИЯ</b>', {parse_mode: 'HTML'})
+                    await bot.telegram.sendMessage(chat_id, `(Всего <b>${serviceObj.ownershipPeriods.length}</b>)`, {parse_mode: 'HTML'})
                     for (const period of serviceObj.ownershipPeriods) {
                         await bot.telegram.sendMessage(chat_id, `С ${period.from} по ${period.to || 'настоящее время'}: ${period.ownerType}, ${period.operation}`)
                     }
@@ -254,8 +255,18 @@ async function listenForMessages() {
                     await bot.telegram.sendMessage(chat_id, 'не зафиксировано')
                 }
 
+                await bot.telegram.sendMessage(chat_id, '<b>ОГРАНИЧЕНИЯ</b>', {parse_mode: 'HTML'})
+                if (serviceObj?.restrictions?.length) {
+                    await bot.telegram.sendMessage(chat_id, `(Всего <b>${serviceObj.restrictions.length}</b>)`, {parse_mode: 'HTML'})
+                    for (const restriction of serviceObj.restrictions) {
+                        await bot.telegram.sendMessage(chat_id, `${restriction.ogrkod || ''}, ${restriction.divtype || ''}${restriction.dateogr ? `, с ${restriction.dateogr}` : ''}${restriction.osnOgr ? `, основание: ${restriction.osnOgr}` : ''}${restriction.phone ? `, телефон инициатора: ${restriction.phone}` : ''}${restriction.gid ? `, ключ ГИБДД: ${restriction.gid}` : ''}`)
+                    }
+                } else {
+                    await bot.telegram.sendMessage(chat_id, 'не зафиксированы')
+                }
+
+                await bot.telegram.sendMessage(chat_id, '<b>Диагностические карты</b>', {parse_mode: 'HTML'})
                 if (serviceObj?.diagnosticCards?.length) {
-                    await bot.telegram.sendMessage(chat_id, '<b>Диагностические карты</b>', {parse_mode: 'HTML'})
                     for (const record of serviceObj.diagnosticCards) {
                         const entries = []
                         record.dcNumber && entries.push(`№${record.dcNumber}`)
@@ -273,10 +284,11 @@ async function listenForMessages() {
                                 subRecord.odometerValue && entries.push(`показания одометра ${subRecord.odometerValue}`)
                                 record.pointAddress && entries.push(`адрес пункта ТО: ${record.pointAddress}`)
                                 await bot.telegram.sendMessage(chat_id, entries.join(', '), {parse_mode: 'HTML'})
-
                             }
                         }
                     }
+                } else {
+                    await bot.telegram.sendMessage(chat_id, 'не обнаружены')
                 }
 
                 break
@@ -292,7 +304,9 @@ async function listenForMessages() {
                 }
                 break
             case 'ingos':
-                await bot.telegram.sendMessage(chat_id, '<b>ДОКУМЕНТЫ</b>', {parse_mode: 'HTML'})
+                if (serviceObj?.documents?.length || serviceObj?.identifiers?.length) {
+                    await bot.telegram.sendMessage(chat_id, '<b>ДОКУМЕНТЫ</b>', {parse_mode: 'HTML'})
+                }
                 if (serviceObj?.documents?.length) {
                     for (const document of serviceObj.documents) {
                         await bot.telegram.sendMessage(chat_id, `${document.type.name || ''}: ${document.number || ''} ${document.date?.length ? `от ${document.date.substring(0, 10)}` : ''}`)

@@ -3,6 +3,26 @@ import UserAgent from 'user-agents'
 import {getCaptcha} from './getCaptcha.mjs'
 import {solveCaptcha} from './solveCaptcha.mjs'
 
+const operations = [
+    '',
+    'Запрет на регистрационные действия',
+    'Запрет на снятие с учета',
+    'Запрет на регистрационные действия и прохождение ГТО',
+    'Утилизация (для транспорта не старше 5 лет)',
+    'Аннулирование'
+]
+
+const organizations = [
+        'не предусмотренный код',
+        'Судебные органы',
+        'Судебный пристав',
+        'Таможенные органы',
+        'Органы социальной защиты',
+        'Нотариус',
+        'ОВД или иные правоохр. органы',
+        'ОВД или иные правоохр. органы (прочие)'
+    ]
+
 const getRestrictionsByVin = async vin => {
     const makeRequest = async () => {
         const {captchaToken, base64jpg} = await getCaptcha()
@@ -39,7 +59,25 @@ const getRestrictionsByVin = async vin => {
             return []
         }
 
-        return res.data.RequestResult.records
+        const restrictions = res.data.RequestResult.records
+        for (let i = 0; i<restrictions.length; i++){
+            //map operations
+            let ogrcod = parseInt(restrictions[i].ogrkod)
+            if(isNaN(ogrcod) || ogrcod >= operations.length || ogrcod < 0){
+                ogrcod = 0
+            }
+            restrictions[i].ogrkod = operations[ogrcod]
+
+            //map organizations
+            let divtype = parseInt(restrictions[i].divtype)
+            if(isNaN(divtype) || divtype >= organizations.length || divtype < 0){
+                divtype = 0
+            }
+            restrictions[i].divtype = organizations[divtype]
+
+        }
+
+        return restrictions
     }
     let res
     try {

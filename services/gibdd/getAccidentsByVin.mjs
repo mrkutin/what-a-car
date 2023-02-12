@@ -3,7 +3,6 @@ import UserAgent from 'user-agents'
 import {getCaptcha} from './getCaptcha.mjs'
 import {solveCaptcha} from './solveCaptcha.mjs'
 
-//todo extend
 const damageMap = {
     '01': 'передний бампер справа',
     '02': 'правая передняя дверь',
