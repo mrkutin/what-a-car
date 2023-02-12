@@ -10,19 +10,14 @@ const redisPub = new Redis(REDIS_HOST)
 const redisSub = new Redis(REDIS_HOST)
 
 try {
-    await redisSub.xgroup('CREATE', 'stream:sravni:resolved', 'gibdd', '$', 'MKSTREAM')
+    await redisSub.xgroup('CREATE', 'stream:vin:resolved', 'gibdd', '$', 'MKSTREAM')
 } catch (e) {
-    console.log('Group "gibdd" already exists in stream:sravni:resolved, skipping')
+    console.log('Group "gibdd" already exists in stream:vin:resolved, skipping')
 }
 try {
-    await redisSub.xgroup('CREATE', 'stream:autoins:resolved', 'gibdd', '$', 'MKSTREAM')
+    await redisSub.xgroup('CREATE', 'stream:sts:resolved', 'gibdd', '$', 'MKSTREAM')
 } catch (e) {
-    console.log('Group "gibdd" already exists in stream:autoins:resolved, skipping')
-}
-try {
-    await redisSub.xgroup('CREATE', 'stream:ingos:resolved', 'gibdd', '$', 'MKSTREAM')
-} catch (e) {
-    console.log('Group "gibdd" already exists in stream:ingos:resolved, skipping')
+    console.log('Group "gibdd" already exists in stream:sts:resolved, skipping')
 }
 
 import {getHistoryByVin} from './getHistoryByVin.mjs'
@@ -64,10 +59,8 @@ async function listenForMessages(/*lastId = '$'*/) {
         'COUNT',
         1,
         'STREAMS',
-        'stream:sravni:resolved',
-        'stream:autoins:resolved',
-        'stream:ingos:resolved',
-        '>',
+        'stream:vin:resolved',
+        'stream:sts:resolved',
         '>',
         '>')
 
@@ -78,91 +71,51 @@ async function listenForMessages(/*lastId = '$'*/) {
 
     //only messages with STS
     const flatMessagesWithSts = results
-        .filter(([stream]) => ['stream:sravni:resolved', 'stream:ingos:resolved'].includes(stream))
+        .filter(([stream]) => ['stream:sts:resolved'].includes(stream))
         .reduce((acc, result) => {
             return acc.concat(result[1])//messages
         }, [])
     for (const message of flatMessagesWithSts) {
-        const {key, chat_id, plate} = flatArrayToObject(message[1])
+        const {sts, chat_id, plate} = flatArrayToObject(message[1])
         const chatSettings = JSON.parse(await redisPub.call('JSON.GET', `chat:${chat_id}`))
-        const messageObj = JSON.parse(await redisPub.call('JSON.GET', key))//object with vin field
-        const [service, ] = key.split(':')
 
-        let sts = null
-        if(service === 'sravni' && messageObj?.carDocument?.documentType === 'sts' && messageObj?.carDocument?.series && messageObj?.carDocument?.number) {
-            sts = `${messageObj.carDocument.series}${messageObj.carDocument.number}`
-        }
-        if(service === 'ingos' && messageObj?.documents?.length) {
-            sts = messageObj.documents.find(doc => doc.type.name === 'СТС')?.number
-        }
-
-        if(sts){
-            const key = `fines:${plate.replace(/ /g, '')}:${sts.replace(/ /g, '')}`
-
-            //debounce
-            const history = await redisPub.xrevrange('stream:fines:resolved', '+', Date.now() - DEBOUCE_INTERVAL_MS, 'COUNT', DEBOUCE_COUNT)
-            const idx = history.findIndex(message => {
-                const {key: history_key, chat_id: history_chat_id} = flatArrayToObject(message[1])
-                return key === history_key && chat_id === history_chat_id
-            })
-            if (idx === -1) {
-                const value = JSON.parse(await redisPub.call('JSON.GET', key))
-                if (!value || chatSettings?.cache === false) {
-                    const fines = await getFinesByPlateAndSts(plate, sts)
-                    await redisPub.call('JSON.SET', key, '$', JSON.stringify({fines}))
-                    await redisPub.expire(key, REDIS_EXPIRATION_SEC)
-                }
-                await redisPub.xadd('stream:fines:resolved', '*', 'key', key, 'chat_id', chat_id, 'plate', plate)
+        if(plate && sts){
+            const key = `fines:${plate}:${sts}`
+            const value = JSON.parse(await redisPub.call('JSON.GET', key))
+            if (!value || chatSettings?.cache === false) {
+                const fines = await getFinesByPlateAndSts(plate, sts)
+                await redisPub.call('JSON.SET', key, '$', JSON.stringify({fines}))
+                await redisPub.expire(key, REDIS_EXPIRATION_SEC)
             }
+            await redisPub.xadd('stream:fines:resolved', '*', 'key', key, 'chat_id', chat_id, 'plate', plate)
         }
     }
 
-    //all messages including these with STS
-    const flatMessages = results
+    //only messages with VIN
+    const flatMessagesWithVin = results
+        .filter(([stream]) => ['stream:vin:resolved'].includes(stream))
         .reduce((acc, result) => {
             return acc.concat(result[1])//messages
         }, [])
-    for (const message of flatMessages) {
-        const {key, chat_id, plate} = flatArrayToObject(message[1])
+    for (const message of flatMessagesWithVin) {
+        const {vin, chat_id, plate} = flatArrayToObject(message[1])
         const chatSettings = JSON.parse(await redisPub.call('JSON.GET', `chat:${chat_id}`))
-        const messageObj = JSON.parse(await redisPub.call('JSON.GET', key))//object with vin field
-        const [service, ] = key.split(':')
-
-        let vin = null
-        if(service === 'sravni' && messageObj?.vin) {
-            vin = messageObj.vin
-        }
-        if(service === 'autoins' && messageObj?.vin) {
-            vin = messageObj.vin
-        }
-        if(service === 'ingos' && messageObj?.identifiers?.length) {
-            vin = messageObj.identifiers.find(identifier => identifier.type.name === 'VIN')?.number
-        }
 
         if (vin) {
             const key = `gibdd:${vin}`
+            let value = JSON.parse(await redisPub.call('JSON.GET', key))
+            if (!value || chatSettings?.cache === false) {
+                const history = await getHistoryByVin(vin)
+                const accidents = await getAccidentsByVin(vin)
+                const wanted = await getWantedByVin(vin)
+                const restrictions = await getRestrictionsByVin(vin)
+                const diagnosticCards = await getDiagnosticCardsByVin(vin)
+                const res = {...history, accidents, wanted, restrictions, diagnosticCards}
 
-            //debounce
-            const history = await redisPub.xrevrange('stream:gibdd:resolved', '+', Date.now() - DEBOUCE_INTERVAL_MS, 'COUNT', DEBOUCE_COUNT)
-            const idx = history.findIndex(message => {
-                const {key: history_key, chat_id: history_chat_id} = flatArrayToObject(message[1])
-                return key === history_key && chat_id === history_chat_id
-            })
-            if (idx === -1) {
-                let value = JSON.parse(await redisPub.call('JSON.GET', key))
-                if (!value || chatSettings?.cache === false) {
-                    const history = await getHistoryByVin(vin)
-                    const accidents = await getAccidentsByVin(vin)
-                    const wanted = await getWantedByVin(vin)
-                    const restrictions = await getRestrictionsByVin(vin)
-                    const diagnosticCards = await getDiagnosticCardsByVin(vin)
-                    const res = {...history, accidents, wanted, restrictions, diagnosticCards}
-
-                    await redisPub.call('JSON.SET', key, '$', JSON.stringify(res))
-                    await redisPub.expire(key, REDIS_EXPIRATION_SEC)
-                }
-                await redisPub.xadd('stream:gibdd:resolved', '*', 'key', key, 'chat_id', chat_id, 'plate', plate)
+                await redisPub.call('JSON.SET', key, '$', JSON.stringify(res))
+                await redisPub.expire(key, REDIS_EXPIRATION_SEC)
             }
+            await redisPub.xadd('stream:gibdd:resolved', '*', 'key', key, 'chat_id', chat_id, 'plate', plate)
         }
     }
 
