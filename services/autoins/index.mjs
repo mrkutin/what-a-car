@@ -79,7 +79,7 @@ async function listenForMessages(/*lastId = '$'*/) {
 
             await redisPub.xadd('stream:autoins:resolved', '*', 'key', key, 'chat_id', messageObj.chat_id, 'plate', plate)
 
-            if(value.vin){
+            if(value?.vin){
                 //debounce
                 const history = await redisPub.xrevrange('stream:vin:resolved', '+', Date.now() - DEBOUCE_INTERVAL_MS, 'COUNT', DEBOUCE_COUNT)
                 const idx = history.findIndex(message => {
