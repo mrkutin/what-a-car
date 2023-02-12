@@ -3,6 +3,8 @@ const REDIS_HOST = process.env.REDIS_HOST || 'redis://0.0.0.0:6379'
 const REDIS_EXPIRATION_SEC = parseInt(process.env.REDIS_EXPIRATION_SEC || (3600 * 24 * 7)) // 1 week
 const HEARTBEAT_INTERVAL_MS = parseInt(process.env.HEARTBEAT_INTERVAL_MS || 1000)
 const ATTEMPTS = parseInt(process.env.ATTEMPTS || 3)
+const DEBOUCE_INTERVAL_MS = parseInt(process.env.DEBOUCE_INTERVAL_MS || 60000) // 1 min
+const DEBOUCE_COUNT = parseInt(process.env.DEBOUCE_COUNT || 100)
 
 import Redis from 'ioredis'
 const redisPub = new Redis(REDIS_HOST)
@@ -74,6 +76,19 @@ async function listenForMessages(/*lastId = '$'*/) {
                 await redisPub.call('JSON.SET', key, '$', JSON.stringify(value))
                 await redisPub.expire(key, REDIS_EXPIRATION_SEC)
             }
+
+            if(value.vin){
+                //debounce
+                const history = await redisPub.xrevrange('stream:vin:resolved', '+', Date.now() - DEBOUCE_INTERVAL_MS, 'COUNT', DEBOUCE_COUNT)
+                const idx = history.findIndex(message => {
+                    const {vin: history_vin, chat_id: history_chat_id} = flatArrayToObject(message[1])
+                    return value.vin === history_vin && chat_id === history_chat_id
+                })
+                if (idx === -1) {
+                    await redisPub.xadd('stream:vin:resolved', '*', 'vin', value.vin, 'chat_id', messageObj.chat_id, 'plate', plate)
+                }
+            }
+
             await redisPub.xadd('stream:autoins:resolved', '*', 'key', key, 'chat_id', messageObj.chat_id, 'plate', plate)
         }
     }

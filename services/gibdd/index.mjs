@@ -117,7 +117,7 @@ async function listenForMessages(/*lastId = '$'*/) {
         }
     }
 
-    //all messages including these with SMS
+    //all messages including these with STS
     const flatMessages = results
         .reduce((acc, result) => {
             return acc.concat(result[1])//messages
