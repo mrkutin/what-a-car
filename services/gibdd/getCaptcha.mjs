@@ -2,9 +2,9 @@
 import axios from 'axios'
 import UserAgent from 'user-agents'
 
-const getCaptcha = async () => {
-    const userAgentData = new UserAgent().data
+const getCaptcha = async (httpsAgent, userAgentData) => {
     const getCaptchaRes = await axios.get('https://check.gibdd.ru/captcha', {
+        httpsAgent,
         headers: {
             'Accept': '*/*',
             'Accept-Encoding': 'gzip, deflate, br',

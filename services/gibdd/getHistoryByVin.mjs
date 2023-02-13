@@ -1,188 +1,66 @@
-const ownerTypeMap = {
-    "Natural": "Физическое лицо",
-    "Legal": "Юридическое лицо"
-}
-
-const autoTypeMap = {
-    "01": "Грузовые автомобили бортовые",
-    "02": "Грузовые автомобили шасси",
-    "03": "Грузовые автомобили фургоны",
-    "04": "Грузовые автомобили тягачи седельные",
-    "05": "Грузовые автомобили самосвалы",
-    "06": "Грузовые автомобили рефрижераторы",
-    "07": "Грузовые автомобили цистерны",
-    "08": "Грузовые автомобили с гидроманипулятором",
-    "09": "Грузовые автомобили прочие",
-    "21": "Легковые автомобили универсал",
-    "22": "Легковые автомобили комби (хэтчбек)",
-    "23": "Легковые автомобили седан",
-    "24": "Легковые автомобили лимузин",
-    "25": "Легковые автомобили купе",
-    "26": "Легковые автомобили кабриолет",
-    "27": "Легковые автомобили фаэтон",
-    "28": "Легковые автомобили пикап",
-    "29": "Легковые автомобили прочие",
-    "41": "Автобусы длиной не более 5 м",
-    "42": "Автобусы длиной более 5 м, но не более 8 м",
-    "43": "Автобусы длиной более 8 м, но не более 12 м",
-    "44": "Автобусы сочлененные длиной более 12 м",
-    "49": "Автобусы прочие",
-    "51": "Специализированные автомобили автоцистерны",
-    "52": "Специализированные автомобили санитарные",
-    "53": "Специализированные автомобили автокраны",
-    "54": "Специализированные автомобили заправщики",
-    "55": "Специализированные автомобили мастерские",
-    "56": "Специализированные автомобили автопогрузчики",
-    "57": "Специализированные автомобили эвакуаторы",
-    "58": "Специализированные пассажирские транспортные средства",
-    "59": "Специализированные автомобили прочие",
-    "71": "Мотоциклы",
-    "72": "Мотороллеры и мотоколяски",
-    "73": "Мотовелосипеды и мопеды",
-    "74": "Мотонарты",
-    "80": "Прицепы самосвалы",
-    "81": "Прицепы к легковым автомобилям",
-    "82": "Прицепы общего назначения к грузовым автомобилям",
-    "83": "Прицепы цистерны",
-    "84": "Прицепы тракторные",
-    "85": "Прицепы вагоны-дома передвижные",
-    "86": "Прицепы со специализированными кузовами",
-    "87": "Прицепы трейлеры",
-    "88": "Прицепы автобуса",
-    "89": "Прицепы прочие",
-    "91": "Полуприцепы с бортовой платформой",
-    "92": "Полуприцепы самосвалы",
-    "93": "Полуприцепы фургоны",
-    "95": "Полуприцепы цистерны",
-    "99": "Полуприцепы прочие",
-    "31": "Трактора",
-    "32": "Самоходные машины и механизмы",
-    "33": "Трамваи",
-    "34": "Троллейбусы",
-    "35": "Велосипеды",
-    "36": "Гужевой транспорт",
-    "38": "Подвижной состав железных дорог",
-    "39": "Иной"
-}
-
-const operationTypeMap = {
-    "01": "регистрация новых, произведенных в России или ввезенных, а также ввезенных в Россию бывших в эксплуатации, в том числе временно на срок более 6 месяцев, испытательной техники",
-    "02": "регистрация ранее зарегистрированных в регистрирующих органах",
-    "03": "изменение собственника (владельца)",
-    "04": "изменение данных о собственнике (владельце)",
-    "05": "изменение данных о транспортном средстве, в том числе изменение технических характеристик и (или) назначения (типа) транспортного средства",
-    "06": "выдача взамен утраченных или пришедших в негодность государственных регистрационных знаков, регистрационных документов, паспортов транспортных средств.",
-    "07": "прекращение регистрации в том числе",
-    "08": "снятие с учета в связи с убытием за пределы Российской Федерации",
-    "09": "снятие с учета в связи с утилизацией",
-    "11": "первичная регистрация",
-    "12": "регистрация снятых с учета",
-    "13": "временная регистрация ТС (на срок проведения проверок, на срок временной прописки, регистрация испытательной техники)",
-    "14": "временный учет (временная регистрация места пребывания ТС без выдачи документов)",
-    "15": "регистрация ТС, ввезенных из-за пределов Российской Федерации",
-    "16": "регистрация ТС, прибывших из других регионов Российской Федерации",
-    "17": "регистрация ТС по новому месту жительства собственника, прибывшего из другого субъекта Российской Федерации, с одновременным снятием с учета по прежнему месту жительства",
-    "18": "восстановление регистрации после аннулирования",
-    "41": "замена государственного регистрационного знака",
-    "42": "выдача дубликата регистрационного документа",
-    "43": "выдача (замена) паспорта ТС",
-    "44": "замена номерного агрегата, цвета, изменение конструкции ТС",
-    "45": "изменение Ф.И.О. (наименования) владельца",
-    "46": "изменение места жительства (юридического адреса) владельца в пределах территории обслуживания регистрационным пунктом",
-    "47": "наличие запретов и ограничений",
-    "48": "снятие запретов и ограничений",
-    "49": "регистрация залога ТС",
-    "50": "прекращение регистрации залога ТС",
-    "51": "коррекция иных реквизитов",
-    "52": "выдача акта технического осмотра",
-    "53": "проведение ГТО",
-    "54": "постоянная регистрация ТС по окончанию временной",
-    "55": "коррекция реквизитов по информации налоговых органов",
-    "56": "коррекция реквизитов при проведении ГТО",
-    "61": "в связи с изменением места регистрации",
-    "62": "в связи с прекращением права собственности (отчуждение, конфискация ТС)",
-    "63": "в связи с вывозом ТС за пределы Российской Федерации",
-    "64": "в связи с окончанием срока временной регистрации",
-    "65": "в связи с утилизацией",
-    "66": "в связи с признанием регистрации недействительной",
-    "67": "снятие с временного учета",
-    "68": "снятие с учета в связи с кражей или угоном",
-    "69": "постановка с одновременным снятием с учета",
-    "81": "документов в связи с обнаружением",
-    "82": "удаление ошибочно введенной записи",
-    "83": "удаление в связи со сверкой",
-    "84": "перевод в архив в связи с корректировкой",
-    "91": "по наследству с заменой государственных регистрационных знаков",
-    "92": "по наследству с сохранением государственных регистрационных знаков за новым собственником (наследником)",
-    "93": "по сделкам, произведенным в любой форме (купля-продажа, дарение, др.) с заменой государственных регистрационных знаков",
-    "94": "по сделкам, произведенным в любой форме (купля-продажа, дарение, др.) с сохранением государственных регистрационных знаков за новым собственником"
-}
+const PROXY = process.env.PROXY || 'socks5://185.132.177.55:32859'// STATIC!!!
 
 import axios from 'axios'
 import UserAgent from 'user-agents'
+import {SocksProxyAgent} from 'socks-proxy-agent'
+const httpsAgent = new SocksProxyAgent(PROXY)
+
 import {getCaptcha} from './getCaptcha.mjs'
 import {solveCaptcha} from './solveCaptcha.mjs'
 
+import {ownerTypeMap, autoTypeMap, operationTypeMap} from './dicts.mjs'
+
 const getHistoryByVin = async vin => {
-    const makeRequest = async () => {
-        const {captchaToken, base64jpg} = await getCaptcha()
-        const {captchaWord} = await solveCaptcha(base64jpg)
-        const userAgentData = new UserAgent().data
+    const userAgentData = new UserAgent().data
 
-        const res = await axios.post('https://xn--b1afk4ade.xn--90adear.xn--p1ai/proxy/check/auto/history', {
-            vin,
-            checkType: 'history',
-            captchaToken,
-            captchaWord
-        }, {
-            headers: {
-                'Accept': 'application/json, text/javascript, */*; q=0.01',
-                'Accept-Encoding': 'gzip, deflate, br',
-                'Accept-Language': 'en-US,en;q=0.9,ru-RU;q=0.8,ru;q=0.7',
-                'Cache-Control': 'no-api-gateway',
-                'Connection': 'keep-alive',
-                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-                'Host': 'xn--b1afk4ade.xn--90adear.xn--p1ai',
-                'Origin': 'https://xn--90adear.xn--p1ai',
-                'Pragma': 'no-api-gateway',
-                'Referer': 'https://xn--90adear.xn--p1ai/',
-                //'sec-ch-ua': '"Not_A Brand";v="99", "Google Chrome";v="109", "Chromium";v="109"',
-                'sec-ch-ua-mobile': `?${userAgentData.deviceCategory === 'desktop' ? '0' : '1'}`,
-                'sec-ch-ua-platform': userAgentData.platform,
-                'Sec-Fetch-Dest': 'empty',
-                'Sec-Fetch-Mode': 'cors',
-                'Sec-Fetch-Site': 'same-site',
-                'User-Agent': userAgentData.userAgent
-            }
-        })
+    const {captchaToken, base64jpg} = await getCaptcha(httpsAgent, userAgentData)
+    const {captchaWord} = await solveCaptcha(base64jpg)
 
-        if (!res?.data?.RequestResult) {
-            return {}
+    const res = await axios.post('https://xn--b1afk4ade.xn--90adear.xn--p1ai/proxy/check/auto/history', {
+        vin,
+        checkType: 'history',
+        captchaToken,
+        captchaWord
+    }, {
+        httpsAgent,
+        headers: {
+            'Accept': 'application/json, text/javascript, */*; q=0.01',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'Accept-Language': 'en-US,en;q=0.9,ru-RU;q=0.8,ru;q=0.7',
+            'Cache-Control': 'no-api-gateway',
+            'Connection': 'keep-alive',
+            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+            'Host': 'xn--b1afk4ade.xn--90adear.xn--p1ai',
+            'Origin': 'https://xn--90adear.xn--p1ai',
+            'Pragma': 'no-api-gateway',
+            'Referer': 'https://xn--90adear.xn--p1ai/',
+            //'sec-ch-ua': '"Not_A Brand";v="99", "Google Chrome";v="109", "Chromium";v="109"',
+            'sec-ch-ua-mobile': `?${userAgentData.deviceCategory === 'desktop' ? '0' : '1'}`,
+            'sec-ch-ua-platform': userAgentData.platform,
+            'Sec-Fetch-Dest': 'empty',
+            'Sec-Fetch-Mode': 'cors',
+            'Sec-Fetch-Site': 'same-site',
+            'User-Agent': userAgentData.userAgent
         }
+    })
 
-        const {ownershipPeriods: {ownershipPeriod: ownershipPeriods}, vehicle} = res.data.RequestResult
-        vehicle.type = autoTypeMap[vehicle.type] || vehicle.type
-        return {
-            ownershipPeriods: ownershipPeriods.map(({from, lastOperation, simplePersonType, to}) => ({
-                from,
-                to,
-                operation: operationTypeMap[lastOperation] || lastOperation,
-                ownerType: ownerTypeMap[simplePersonType] || simplePersonType
-            })),
-            vehicle
-        }
+    if (!res?.data?.RequestResult) {
+        return null
     }
 
-    let res
-    try {
-        res = await makeRequest()
-        if (!res) {
-            res = await makeRequest()
-        }
-    } catch (e) {
-        console.log(e.message)
+    const {ownershipPeriods: {ownershipPeriod: ownershipPeriods}, vehicle} = res.data.RequestResult
+    vehicle.type = autoTypeMap[vehicle.type] || vehicle.type
+    return {
+        ownershipPeriods: ownershipPeriods.map(({from, lastOperation, simplePersonType, to}) => ({
+            from,
+            to,
+            operation: operationTypeMap[lastOperation] || lastOperation,
+            ownerType: ownerTypeMap[simplePersonType] || simplePersonType
+        })),
+        vehicle
     }
-    return res
 }
+
+// const res = await getHistoryByVin('XW8AB83T1BK300659')
 
 export {getHistoryByVin}
