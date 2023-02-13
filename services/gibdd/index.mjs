@@ -1,8 +1,6 @@
 const REDIS_HOST = process.env.REDIS_HOST || 'redis://0.0.0.0:6379'
 const REDIS_EXPIRATION_SEC = parseInt(process.env.REDIS_EXPIRATION_SEC || (3600 * 24 * 7)) // 1 week
 const HEARTBEAT_INTERVAL_MS = parseInt(process.env.HEARTBEAT_INTERVAL_MS || 1000)
-const DEBOUCE_INTERVAL_MS = parseInt(process.env.DEBOUCE_INTERVAL_MS || 60000)
-const DEBOUCE_COUNT = parseInt(process.env.DEBOUCE_COUNT || 100)
 
 import Redis from 'ioredis'
 
