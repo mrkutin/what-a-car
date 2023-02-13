@@ -245,26 +245,6 @@ async function listenForMessages() {
                     }
                 }
 
-                await bot.telegram.sendMessage(chat_id, '<b>УЧАСТИЕ в ДТП</b>', {parse_mode: 'HTML'})
-                if (serviceObj?.accidents?.length) {
-                    await bot.telegram.sendMessage(chat_id, `(Всего <b>${serviceObj.accidents.length}</b>)`, {parse_mode: 'HTML'})
-                    for (const accident of serviceObj.accidents) {
-                        await bot.telegram.sendMessage(chat_id, `${accident.AccidentDateTime || ''} ${accident.AccidentPlace || ''}, ${accident.AccidentType ? accident.AccidentType.toLowerCase() : ''}, количество участников: ${accident.VehicleAmount || ''}${accident?.DamagePoints?.length ? `, повреждения: ${accident?.DamagePoints.join(', ')}` : ''}`)
-                    }
-                } else {
-                    await bot.telegram.sendMessage(chat_id, 'не зафиксировано')
-                }
-
-                await bot.telegram.sendMessage(chat_id, '<b>ОГРАНИЧЕНИЯ</b>', {parse_mode: 'HTML'})
-                if (serviceObj?.restrictions?.length) {
-                    await bot.telegram.sendMessage(chat_id, `(Всего <b>${serviceObj.restrictions.length}</b>)`, {parse_mode: 'HTML'})
-                    for (const restriction of serviceObj.restrictions) {
-                        await bot.telegram.sendMessage(chat_id, `${restriction.ogrkod || ''}, ${restriction.divtype || ''}${restriction.dateogr ? `, с ${restriction.dateogr}` : ''}${restriction.osnOgr ? `, основание: ${restriction.osnOgr}` : ''}${restriction.phone ? `, телефон инициатора: ${restriction.phone}` : ''}${restriction.gid ? `, ключ ГИБДД: ${restriction.gid}` : ''}`)
-                    }
-                } else {
-                    await bot.telegram.sendMessage(chat_id, 'не обнаружены')
-                }
-
                 await bot.telegram.sendMessage(chat_id, '<b>Диагностические карты</b>', {parse_mode: 'HTML'})
                 if (serviceObj?.diagnosticCards?.length) {
                     for (const record of serviceObj.diagnosticCards) {
@@ -291,6 +271,35 @@ async function listenForMessages() {
                     await bot.telegram.sendMessage(chat_id, 'не обнаружены')
                 }
 
+                await bot.telegram.sendMessage(chat_id, '<b>УЧАСТИЕ в ДТП</b>', {parse_mode: 'HTML'})
+                if (serviceObj?.accidents?.length) {
+                    await bot.telegram.sendMessage(chat_id, `(Всего <b>${serviceObj.accidents.length}</b>)`, {parse_mode: 'HTML'})
+                    for (const accident of serviceObj.accidents) {
+                        await bot.telegram.sendMessage(chat_id, `${accident.AccidentDateTime || ''} ${accident.AccidentPlace || ''}, ${accident.AccidentType ? accident.AccidentType.toLowerCase() : ''}, количество участников: ${accident.VehicleAmount || ''}${accident?.DamagePoints?.length ? `, повреждения: ${accident?.DamagePoints.join(', ')}` : ''}`)
+                    }
+                } else {
+                    await bot.telegram.sendMessage(chat_id, 'не зафиксировано')
+                }
+
+                await bot.telegram.sendMessage(chat_id, '<b>ОГРАНИЧЕНИЯ</b>', {parse_mode: 'HTML'})
+                if (serviceObj?.restrictions?.length) {
+                    await bot.telegram.sendMessage(chat_id, `(Всего <b>${serviceObj.restrictions.length}</b>)`, {parse_mode: 'HTML'})
+                    for (const restriction of serviceObj.restrictions) {
+                        await bot.telegram.sendMessage(chat_id, `${restriction.ogrkod || ''}, ${restriction.divtype || ''}${restriction.dateogr ? `, с ${restriction.dateogr}` : ''}${restriction.osnOgr ? `, основание: ${restriction.osnOgr}` : ''}${restriction.phone ? `, телефон инициатора: ${restriction.phone}` : ''}${restriction.gid ? `, ключ ГИБДД: ${restriction.gid}` : ''}`)
+                    }
+                } else {
+                    await bot.telegram.sendMessage(chat_id, 'не обнаружены')
+                }
+
+                await bot.telegram.sendMessage(chat_id, '<b>НАХОЖДЕНИЕ В РОЗЫСКЕ</b>', {parse_mode: 'HTML'})
+                if (serviceObj?.wanted?.length) {
+                    await bot.telegram.sendMessage(chat_id, `(Всего <b>${serviceObj.wanted.length}</b>)`, {parse_mode: 'HTML'})
+                    for (const record of serviceObj.wanted) {
+                        await bot.telegram.sendMessage(chat_id, `${record.w_model ? `Автомобиль ${record.w_model}` : ''}${record.w_god_vyp ? ` ${record.w_god_vyp} года выпуска` : ''}${record.w_reg_zn ? `, гос. номер ${record.w_reg_zn}` : ''}${record.w_vin ? `, VIN ${record.w_vin}` : ''}${record.w_kuzov ? `, номер кузова ${record.w_kuzov}` : ''}${record.w_shassi ? `, номер шасси ${record.w_shassi}` : ''}${record.w_dvig ? `, номер двигателя ${record.w_dvig}` : ''}${record.w_data_pu ? `, дата постоянного учета в розыке: ${record.w_data_pu}` : ''}${record.w_reg_inic ? `, регион инициатора розыска: ${record.w_reg_inic}` : ''}`)
+                    }
+                } else {
+                    await bot.telegram.sendMessage(chat_id, 'не обнаружено')
+                }
                 break
             case 'fines':
                 await bot.telegram.sendMessage(chat_id, '<b>ШТРАФЫ</b>', {parse_mode: 'HTML'})
