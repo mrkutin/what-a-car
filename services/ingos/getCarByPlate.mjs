@@ -1,3 +1,4 @@
+const PROXY = process.env.PROXY || 'socks5://190.2.155.30:21551'//dynamic
 const URL = 'https://www.ingos.ru/auto/osago/calc?mode=calc'
 
 import puppeteer from 'puppeteer-extra'
@@ -13,8 +14,7 @@ const browser = await puppeteer.launch({
     defaultViewport: {
         width: 1920, height: 1080
     },
-    args: ['--no-sandbox', '--disable-setuid-sandbox']
-    //args: [ '--proxy-server=http://80.244.229.102:10000' ]
+    args: ['--no-sandbox', '--disable-setuid-sandbox', `--proxy-server=${PROXY}`]
 })
 
 const context = browser.defaultBrowserContext()

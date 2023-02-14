@@ -1,3 +1,5 @@
+const PROXY = process.env.PROXY || 'socks5://190.2.155.30:21551'//dynamic
+
 import puppeteer from 'puppeteer-extra'
 import {executablePath} from 'puppeteer'
 
@@ -11,8 +13,7 @@ const browser = await puppeteer.launch({
     defaultViewport: {
         width: 1920, height: 1080
     },
-    args: ['--no-sandbox', '--disable-setuid-sandbox']
-    //args: [ '--proxy-server=http://80.244.229.102:10000' ]
+    args: ['--no-sandbox', '--disable-setuid-sandbox', `--proxy-server=${PROXY}`]
 })
 
 const page = await browser.newPage()
@@ -24,8 +25,14 @@ const getTaxiRegByPlate = async plate => {
     )
     await page.waitForNetworkIdle()
     const scriptText = await page.evaluate(() => {
-        return Array.from(document.querySelectorAll('script')).find(el => el.outerHTML.includes('new Vue')).outerHTML
+        const scripts = Array.from(document.querySelectorAll('script'))
+        const vueScript = scripts.find(el => el.outerHTML.includes('new Vue'))
+        return vueScript?.outerHTML || null
     })
+
+    if(!scriptText){
+        return null
+    }
 
     const extractedText = scriptText.split('result: ')[1].split('error:')[0].trim().slice(0, -1)
     const json = JSON.parse(extractedText)

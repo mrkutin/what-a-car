@@ -1,3 +1,5 @@
+const PROXY = process.env.PROXY || 'socks5://190.2.155.30:21551'//dynamic
+
 const COOKIES_FILE = './cookies.json'
 
 import fs from 'fs'
@@ -26,8 +28,7 @@ const getEstimateByPlate = async plate => {
         defaultViewport: {
             width: 1920, height: 1080
         },
-        args: ['--no-sandbox', '--disable-setuid-sandbox']
-        //args: [ '--proxy-server=http://80.244.229.102:10000' ]
+        args: ['--no-sandbox', '--disable-setuid-sandbox', `--proxy-server=${PROXY}`]
     })
 
     const page = await browser.newPage()
@@ -125,7 +126,7 @@ const getEstimateByPlate = async plate => {
 }
 
 //const insurance = await getEstimateByPlate('А777МР77 ')
-// const insurance = await getEstimateByPlate('р673хк750 ')
-// console.log(insurance)
+const insurance = await getEstimateByPlate('р673хк750 ')
+console.log(insurance)
 
 export {getEstimateByPlate}
