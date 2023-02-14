@@ -103,7 +103,7 @@ const getEstimateByPlate = async plate => {
         })
         setTimeout(() => {
             reject(new Error(`/api/autoInfo waiting timeout for ${plate}`))
-        }, 20000)
+        }, NAVIGATION_TIMEOUT_MS)
     })
 
     await page.click('button[type="submit"]')

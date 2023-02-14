@@ -1,4 +1,7 @@
 const PROXY = process.env.PROXY || 'socks5://190.2.155.30:21551'//dynamic
+const NAVIGATION_TIMEOUT_MS = 60000
+
+import querystring from 'querystring'
 
 import puppeteer from 'puppeteer-extra'
 import {executablePath} from 'puppeteer'
@@ -7,44 +10,59 @@ import StealthPlugin from 'puppeteer-extra-plugin-stealth'
 
 puppeteer.use(StealthPlugin())
 
-const browser = await puppeteer.launch({
-    headless: true,
-    executablePath: executablePath(),
-    defaultViewport: {
-        width: 1920, height: 1080
-    },
-    args: ['--no-sandbox', '--disable-setuid-sandbox', `--proxy-server=${PROXY}`]
-})
-
-const page = await browser.newPage()
 const getTaxiRegByPlate = async plate => {
     console.log(`getTaxiRegByPlate plate: ${plate}, ${new Date()}`)
 
-    await page.goto(`https://mtdi.mosreg.ru/deyatelnost/celevye-programmy/taksi1/proverka-razresheniya-na-rabotu-taksi?number=${plate}&name=&id=&region=ALL`,
-        {waitUntil: 'domcontentloaded'}
-    )
-    await page.waitForNetworkIdle()
-    const scriptText = await page.evaluate(() => {
-        const scripts = Array.from(document.querySelectorAll('script'))
-        const vueScript = scripts.find(el => el.outerHTML.includes('new Vue'))
-        return vueScript?.outerHTML || null
+    const query = querystring.encode({
+        number: plate,
+        name: "",
+        id: "",
+        region: "ALL"
     })
+    const url = `https://mtdi.mosreg.ru/deyatelnost/celevye-programmy/taksi1/proverka-razresheniya-na-rabotu-taksi?${query}`
 
-    if(!scriptText){
-        return null
-    }
+    const browser = await puppeteer.launch({
+        headless: true,
+        executablePath: executablePath(),
+        defaultViewport: {
+            width: 1920, height: 1080
+        },
+        args: ['--no-sandbox', '--disable-setuid-sandbox', `--proxy-server=${PROXY}`]
+    })
+    const page = await browser.newPage()
 
-    const extractedText = scriptText.split('result: ')[1].split('error:')[0].trim().slice(0, -1)
-    const json = JSON.parse(extractedText)
+    const responsePromise = new Promise((resolve, reject) => {
+        page.on('response', async (response) => {
+            const text = await response.text()
+            if (response.status() === 200 && response.request().url() === url && text.includes('new Vue')) {
+                //const text = await response.text()
 
-    console.log(`getTaxiRegByPlate json: ${JSON.stringify(json, null, 2)}, ${new Date()}`)
+                const scripts = new RegExp(/\<script\>(.*?)\<\/script\>/gms).exec(text)
+                const vueScript = scripts.find(script => script.includes('new Vue'))
 
-    return json
+                const extractedText = vueScript.split('result: ')[1].split('error:')[0].trim().slice(0, -1)
+                const json = JSON.parse(extractedText)
+
+                resolve(json)
+            }
+        })
+        setTimeout(() => {
+            reject(new Error(`proverka-razresheniya-na-rabotu-taksi?number= waiting timeout for ${plate}`))
+        }, NAVIGATION_TIMEOUT_MS)
+    })
+    await page.goto(url)
+
+    const res = await responsePromise
+    console.log(`getTaxiRegByPlate json: ${JSON.stringify(res, null, 2)}, ${new Date()}`)
+
+    await browser.close()
+
+    return res
 }
 
 // let carInfo = await getTaxiRegByPlate('О189ХУ750')
 // console.log(carInfo)
-// carInfo = await getTaxiRegByPlate('К673ХУ750')
+// let carInfo = await getTaxiRegByPlate('Х470хр750')
 // console.log(carInfo)
 
 export {getTaxiRegByPlate}
