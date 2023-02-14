@@ -3,5 +3,5 @@ WORKDIR /usr/src/app
 COPY ./package.json .
 RUN npm i
 COPY ./*.mjs ./
-COPY ./cookies.json ./
+#COPY ./cookies.json ./
 CMD npm start

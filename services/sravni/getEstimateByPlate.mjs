@@ -1,4 +1,5 @@
 const PROXY = process.env.PROXY || 'socks5://190.2.155.30:21551'//dynamic
+const NAVIGATION_TIMEOUT_MS = 60000
 
 const COOKIES_FILE = './cookies.json'
 
@@ -32,6 +33,7 @@ const getEstimateByPlate = async plate => {
     })
 
     const page = await browser.newPage()
+    await page.setDefaultNavigationTimeout(NAVIGATION_TIMEOUT_MS)
 
     let cookies = []
     if (fs.existsSync(COOKIES_FILE)) {

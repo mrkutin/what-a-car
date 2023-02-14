@@ -1,4 +1,6 @@
 const PROXY = process.env.PROXY || 'socks5://190.2.155.30:21551'//dynamic
+const NAVIGATION_TIMEOUT_MS = 60000
+
 const URL = 'https://www.ingos.ru/auto/osago/calc?mode=calc'
 
 import puppeteer from 'puppeteer-extra'
@@ -21,6 +23,8 @@ const context = browser.defaultBrowserContext()
 await context.overridePermissions(URL, ['geolocation'])
 
 const page = await browser.newPage()
+await page.setDefaultNavigationTimeout(NAVIGATION_TIMEOUT_MS)
+
 await page.goto(URL)
 
 const getCarByPlate = async plate => {
@@ -38,7 +42,7 @@ const getCarByPlate = async plate => {
         })
         setTimeout(() => {
             reject(new Error(`v1?number waiting timeout for ${plate}`))
-        }, 20000)
+        }, 60000)
     })
 
     await page.waitForSelector('button[type="submit"]', {timeout: 10000})

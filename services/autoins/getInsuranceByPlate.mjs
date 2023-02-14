@@ -1,4 +1,5 @@
 const PROXY = process.env.PROXY || 'socks5://190.2.155.30:21551'
+const NAVIGATION_TIMEOUT_MS = 60000
 
 import puppeteer from 'puppeteer-extra'
 import {executablePath} from 'puppeteer'
@@ -26,8 +27,7 @@ const getInsuranceByPlate = async (plate) => {
     })
 
     const page = await browser.newPage()
-
-    await page.setDefaultNavigationTimeout(60000)
+    await page.setDefaultNavigationTimeout(NAVIGATION_TIMEOUT_MS)
 
     await page.goto('https://dkbm-web.autoins.ru/dkbm-web-1.0/policyInfo.htm', {waitUntil: 'domcontentloaded'})
 
