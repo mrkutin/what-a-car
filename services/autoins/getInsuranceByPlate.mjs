@@ -14,7 +14,7 @@ puppeteer.use(AnonymizePlugin())
 import headers from './headers.mjs'
 
 const getInsuranceByPlate = async (plate) => {
-    console.log(`plate: ${plate}`)
+    console.log(`getInsuranceByPlate plate: ${plate}, ${new Date()}`)
 
     const browser = await puppeteer.launch({
         headless: true,
@@ -26,6 +26,9 @@ const getInsuranceByPlate = async (plate) => {
     })
 
     const page = await browser.newPage()
+
+    await page.setDefaultNavigationTimeout(60000)
+
     await page.goto('https://dkbm-web.autoins.ru/dkbm-web-1.0/policyInfo.htm', {waitUntil: 'domcontentloaded'})
 
     await page.waitForSelector('#tsBlockTab', {timeout: 5000})
@@ -59,7 +62,7 @@ const getInsuranceByPlate = async (plate) => {
 
     await browser.close()
 
-    console.log(`autoins: ${JSON.stringify(autoins, null, 2)}`)
+    console.log(`getInsuranceByPlate autoins: ${JSON.stringify(autoins, null, 2)}, ${new Date()}`)
 
     return autoins
 }
