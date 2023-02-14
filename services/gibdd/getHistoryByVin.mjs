@@ -11,6 +11,8 @@ import {solveCaptcha} from './solveCaptcha.mjs'
 import {ownerTypeMap, autoTypeMap, operationTypeMap} from './dicts.mjs'
 
 const getHistoryByVin = async vin => {
+    console.log(`getHistoryByVin vin: ${vin}, ${new Date()}`)
+
     const userAgentData = new UserAgent().data
 
     const {captchaToken, base64jpg} = await getCaptcha(httpsAgent, userAgentData)
@@ -43,6 +45,8 @@ const getHistoryByVin = async vin => {
             'User-Agent': userAgentData.userAgent
         }
     })
+
+    console.log(`getHistoryByVin res.data: ${JSON.stringify(res.data)}, ${new Date()}`)
 
     if (!res?.data?.RequestResult) {
         return null

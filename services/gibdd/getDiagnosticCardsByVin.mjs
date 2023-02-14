@@ -9,6 +9,8 @@ import {getCaptcha} from './getCaptcha.mjs'
 import {solveCaptcha} from './solveCaptcha.mjs'
 
 const getDiagnosticCardsByVin = async (vin) => {
+    console.log(`getDiagnosticCardsByVin vin: ${vin}, ${new Date()}`)
+
     const userAgentData = new UserAgent().data
     const {captchaToken, base64jpg} = await getCaptcha(httpsAgent, userAgentData)
     const {captchaWord} = await solveCaptcha(base64jpg)
@@ -39,6 +41,8 @@ const getDiagnosticCardsByVin = async (vin) => {
             'User-Agent': userAgentData.userAgent
         }
     })
+
+    console.log(`getDiagnosticCardsByVin res.data: ${JSON.stringify(res.data)}, ${new Date()}`)
 
     if(!res?.data?.RequestResult?.diagnosticCards){
         return null

@@ -9,6 +9,8 @@ import {getCaptcha} from './getCaptcha.mjs'
 import {solveCaptcha} from './solveCaptcha.mjs'
 
 const getWantedByVin = async vin => {
+    console.log(`getWantedByVin vin: ${vin}, ${new Date()}`)
+
     const userAgentData = new UserAgent().data
 
     const {captchaToken, base64jpg} = await getCaptcha(httpsAgent, userAgentData)
@@ -41,6 +43,8 @@ const getWantedByVin = async vin => {
         }
     })
 
+    console.log(`getWantedByVin res.data: ${JSON.stringify(res.data)}, ${new Date()}`)
+
     if(!res?.data?.RequestResult?.records){
         return null
     }
@@ -48,6 +52,6 @@ const getWantedByVin = async vin => {
     return res.data.RequestResult.records
 }
 
-const res = await getWantedByVin('WAUZZZ4DZYN000193')
+// const res = await getWantedByVin('WAUZZZ4DZYN000193')
 
 export {getWantedByVin}

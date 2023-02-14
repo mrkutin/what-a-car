@@ -9,6 +9,8 @@ import {getCaptcha} from './getCaptcha.mjs'
 import {solveCaptcha} from './solveCaptcha.mjs'
 
 const getFinesByPlateAndSts = async (plate, sts) => {
+    console.log(`getDiagnosticCardsByVin plate, sts: ${plate}, ${sts} ${new Date()}`)
+
     let regnum, regreg
     if (plate.match(/^[АВЕКМНОРСТУХ]\d{3}(?<!000)[АВЕКМНОРСТУХ]{2}\d{2,3}$/ui) ) {//обычный номер
         regnum = plate.substr(0, 6)
@@ -50,6 +52,8 @@ const getFinesByPlateAndSts = async (plate, sts) => {
             'User-Agent': userAgentData.userAgent
         }
     })
+
+    console.log(`getFinesByPlateAndSts res.data: ${JSON.stringify(res.data)}, ${new Date()}`)
 
     if (!res?.data?.data) {
         return null

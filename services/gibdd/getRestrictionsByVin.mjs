@@ -11,6 +11,8 @@ import {solveCaptcha} from './solveCaptcha.mjs'
 import {operations, organizations} from './dicts.mjs'
 
 const getRestrictionsByVin = async vin => {
+    console.log(`getRestrictionsByVin vin: ${vin}, ${new Date()}`)
+
     const userAgentData = new UserAgent().data
 
     const {captchaToken, base64jpg} = await getCaptcha(httpsAgent, userAgentData)
@@ -42,6 +44,8 @@ const getRestrictionsByVin = async vin => {
             'User-Agent': userAgentData.userAgent
         }
     })
+
+    console.log(`getRestrictionsByVin res.data: ${JSON.stringify(res.data)}, ${new Date()}`)
 
     if(!res?.data?.RequestResult?.records){
         return null

@@ -11,6 +11,8 @@ import {solveCaptcha} from './solveCaptcha.mjs'
 import {damageMap} from "./dicts.mjs";
 
 const getAccidentsByVin = async vin => {
+    console.log(`getAccidentsByVin vin: ${vin}, ${new Date()}`)
+
     const userAgentData = new UserAgent().data
 
     const {captchaToken, base64jpg} = await getCaptcha(httpsAgent, userAgentData)
@@ -43,6 +45,8 @@ const getAccidentsByVin = async vin => {
             'User-Agent': userAgentData.userAgent
         }
     })
+
+    console.log(`getAccidentsByVin res.data: ${JSON.stringify(res.data)}, ${new Date()}`)
 
     if (!res?.data?.RequestResult?.Accidents) {
         return null
