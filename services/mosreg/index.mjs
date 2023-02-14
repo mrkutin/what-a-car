@@ -59,7 +59,6 @@ async function listenForMessages(/*lastId = '$'*/) {
             let value = JSON.parse(await redisPub.call('JSON.GET', key))
             if (!value || chatSettings?.cache === false) {
                 value = await getTaxiRegByPlate(plate)
-                console.log(JSON.stringify(value, null, 2))
                 await redisPub.call('JSON.SET', key, '$', JSON.stringify(value))
                 await redisPub.expire(key, REDIS_EXPIRATION_SEC)
             }
