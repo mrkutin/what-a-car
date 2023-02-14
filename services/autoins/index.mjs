@@ -73,6 +73,10 @@ async function listenForMessages(/*lastId = '$'*/) {
                     }
                 }
 
+                if(!value && attempt === ATTEMPTS){
+                    throw new Error('reboot container')
+                }
+
                 await redisPub.call('JSON.SET', key, '$', JSON.stringify(value))
                 await redisPub.expire(key, REDIS_EXPIRATION_SEC)
             }
