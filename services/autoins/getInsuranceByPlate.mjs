@@ -12,7 +12,7 @@ import AnonymizePlugin from 'puppeteer-extra-plugin-anonymize-ua'
 
 puppeteer.use(AnonymizePlugin())
 
-import headers from './headers.mjs'
+import {headersNoBody, headersWithBody} from './headers.mjs'
 
 const getInsuranceByPlate = async (plate) => {
     console.log(`getInsuranceByPlate plate: ${plate}, ${new Date()}`)
@@ -50,10 +50,7 @@ const getInsuranceByPlate = async (plate) => {
     if (!flattenedTexts.length)
         return null
 
-    //to remove duplicate vins
-    if ((flattenedTexts[7] === flattenedTexts[8]) || (flattenedTexts[7] === 'Сведения отсутствуют')) {
-        flattenedTexts.splice(7, 1)
-    }
+    const headers = texts[5].includes('Номер кузова') ? headersWithBody : headersNoBody
 
     const autoins = flattenedTexts.reduce((acc, text, idx) => {
         acc[headers[idx]] = text
@@ -67,7 +64,10 @@ const getInsuranceByPlate = async (plate) => {
     return autoins
 }
 
-// const insurance = await getInsuranceByPlate('Е552МВ790')
+// const insurance = await getInsuranceByPlate('М602ТН48')
+// console.log(insurance)
+
+// const insurance = await getInsuranceByPlate('О189ХУ750')
 // console.log(insurance)
 
 export {getInsuranceByPlate}

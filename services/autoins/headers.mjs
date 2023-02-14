@@ -1,1 +1,3 @@
-export default ['row', 'policyId', 'company', 'status', 'policyTerm', 'makeAndModel', 'licensePlate', 'vin', 'powerHp', 'vehicleInTransit', 'trailerAllowed', 'usingPurpose', 'hasRestrictions', 'policyHolder', 'vehicleOwner', 'KBM', 'region', 'premium']
+const headersNoBody = ['row', 'policyId', 'company', 'status', 'policyTerm', 'makeAndModel', 'licensePlate', 'vin', 'powerHp', 'vehicleInTransit', 'trailerAllowed', 'usingPurpose', 'hasRestrictions', 'policyHolder', 'vehicleOwner', 'KBM', 'region', 'premium']
+const headersWithBody = ['row', 'policyId', 'company', 'status', 'policyTerm', 'makeAndModel', 'licensePlate', 'vin', 'body', 'powerHp', 'vehicleInTransit', 'trailerAllowed', 'usingPurpose', 'hasRestrictions', 'policyHolder', 'vehicleOwner', 'KBM', 'region', 'premium']
+export {headersNoBody, headersWithBody}
