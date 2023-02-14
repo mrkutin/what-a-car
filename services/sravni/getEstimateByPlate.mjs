@@ -18,6 +18,8 @@ import StealthPlugin from 'puppeteer-extra-plugin-stealth'
 puppeteer.use(StealthPlugin())
 
 const getEstimateByPlate = async plate => {
+    console.log(`getEstimateByPlate plate: ${plate}, ${new Date()}`)
+
     const browser = await puppeteer.launch({
         headless: true,
         executablePath: executablePath(),
@@ -111,6 +113,9 @@ const getEstimateByPlate = async plate => {
         fs.writeFileSync(COOKIES_FILE, JSON.stringify(cookies, null, 2), {encoding: 'utf8'})
 
         await browser.close()
+
+        console.log(`getEstimateByPlate sravni: ${JSON.stringify(sravni, null, 2)}, ${new Date()}`)
+
         return sravni
     } catch (e) {
         await browser.close()

@@ -17,6 +17,8 @@ const browser = await puppeteer.launch({
 
 const page = await browser.newPage()
 const getTaxiRegByPlate = async plate => {
+    console.log(`getTaxiRegByPlate plate: ${plate}, ${new Date()}`)
+
     await page.goto(`https://mtdi.mosreg.ru/deyatelnost/celevye-programmy/taksi1/proverka-razresheniya-na-rabotu-taksi?number=${plate}&name=&id=&region=ALL`,
         {waitUntil: 'domcontentloaded'}
     )
@@ -27,6 +29,8 @@ const getTaxiRegByPlate = async plate => {
 
     const extractedText = scriptText.split('result: ')[1].split('error:')[0].trim().slice(0, -1)
     const json = JSON.parse(extractedText)
+
+    console.log(`getTaxiRegByPlate json: ${JSON.stringify(json, null, 2)}, ${new Date()}`)
 
     return json
 }

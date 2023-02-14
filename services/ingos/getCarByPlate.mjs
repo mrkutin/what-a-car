@@ -24,6 +24,8 @@ const page = await browser.newPage()
 await page.goto(URL)
 
 const getCarByPlate = async plate => {
+    console.log(`getCarByPlate plate: ${plate}, ${new Date()}`)
+
     await page.waitForSelector('input', {timeout: 10000})
     await page.type('input', plate, {delay: 100})
 
@@ -45,6 +47,9 @@ const getCarByPlate = async plate => {
     const res = await responsePromise
 
     await page.$eval('input', el => el.value = '')
+
+    console.log(`getCarByPlate res: ${JSON.stringify(res, null, 2)}, ${new Date()}`)
+
     return res
 }
 
