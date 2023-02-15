@@ -2,6 +2,7 @@ from os import environ
 from redis import Redis, exceptions
 import string
 import random
+from solve_captcha import solve_base64
 
 def connect_to_redis():
     hostname = environ.get('REDIS_HOSTNAME', 'localhost')
@@ -12,7 +13,7 @@ def connect_to_redis():
 
 def ensure_group_exists(redis_connection):
     try:
-        redis_connection.xgroup_create('stream:captcha-solve:requested', 'captcha-solver', mkstream=True)
+        redis_connection.xgroup_create('stream:captcha:requested', 'captcha-solver', mkstream=True)
     except exceptions.ResponseError as e:
         print(e)
 def get_data(redis_connection):
@@ -23,21 +24,24 @@ def get_data(redis_connection):
             resp = redis_connection.xreadgroup(
                 'captcha-solver',
                 ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(5)),
-                {'stream:captcha-solve:requested': '>'}, count=1, block=sleep_ms
+                {'stream:captcha:requested': '>'}, count=1, block=sleep_ms
             )
             if resp:
                 key, messages = resp[0]
                 last_id, data = messages[0]
-                print('REDIS ID: ', last_id)
-                send_data(redis_connection)
 
+                print('REDIS ID: ', last_id)
+                print('REDIS DATA token: ', data[b'token'])
+                print('REDIS DATA base64: ', data[b'base64'])
+                solution = solve_base64(data[b'base64'])
+                send_data(redis_connection, {"solution": solution})
         except ConnectionError as e:
             print('ERROR REDIS CONNECTION: {}'.format(e))
 
 
-def send_data(redis_connection):
+def send_data(redis_connection, data):
     try:
-        resp = redis_connection.xadd('stream:captcha-solve:resolved', {'solved': '1234'})
+        resp = redis_connection.xadd('stream:captcha:resolved', data)
         print(resp)
 
     except ConnectionError as e:
