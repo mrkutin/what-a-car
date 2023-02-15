@@ -93,6 +93,19 @@ const flatArrayToObject = arr => {
 
 bot.start((ctx) => ctx.reply('Привет, это бот "Что за тачка?"\nДля проверки тачки отправь её номер'))
 
+bot.command('unblock', async ctx => {
+    if (!ADMIN_IDS.includes(ctx.update.message.from.id)) {
+        return
+    }
+
+    const {update} = ctx
+    const {message} = update
+    const {text} = message
+    const [, user_id] = text.split(' ')
+    await redisPub.call('DEL', `block:${user_id}`)
+    await ctx.reply(`user ${user_id} has been unblocked!`)
+})
+
 bot.command('block', async ctx => {
     if (!ADMIN_IDS.includes(ctx.update.message.from.id)) {
         return
