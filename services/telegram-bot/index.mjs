@@ -1,5 +1,7 @@
 const REDIS_HOST = process.env.REDIS_HOST || 'redis://0.0.0.0:6379'
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN
+const ADMIN_IDS = [172353063]
+
 const en2ruMap = {
     'A': 'А',
     'B': 'В',
@@ -91,7 +93,29 @@ const flatArrayToObject = arr => {
 
 bot.start((ctx) => ctx.reply('Привет, это бот "Что за тачка?"\nДля проверки тачки отправь её номер'))
 
+bot.command('block', async ctx => {
+    if (!ADMIN_IDS.includes(ctx.update.message.from.id)) {
+        return
+    }
+
+    const {update} = ctx
+    const {message} = update
+    const {text} = message
+    const [, user_id, ttl] = text.split(' ')
+    if(ttl){
+        await redisPub.call('SET', `block:${user_id}`, 1, 'EX', parseInt(ttl))
+        await ctx.reply(`user ${user_id} has been blocked for ${new Date(parseInt(ttl) * 1000).toISOString().substring(11, 19)}!`)
+    } else {
+        await redisPub.call('SET', `block:${user_id}`, 1)
+        await ctx.reply(`user ${user_id} has been blocked!`)
+    }
+})
+
 bot.command('cache', async ctx => {
+    if (!ADMIN_IDS.includes(ctx.update.message.from.id)) {
+        return
+    }
+
     const {update} = ctx
     const {message} = update
     const {text, chat} = message
@@ -103,15 +127,18 @@ bot.command('cache', async ctx => {
     } else {
         await ctx.reply('Cache disabled')
     }
-
 })
 
 bot.command('health', async ctx => {
+    if (!ADMIN_IDS.includes(ctx.update.message.from.id)) {
+        return
+    }
+
     const keys = await redisPub.keys('heartbeat:*')
 
     const groupedKeys = keys.reduce((acc, key) => {
         const [, service, host] = key.split(':')
-        if(!acc[service]){
+        if (!acc[service]) {
             acc[service] = [host]
         } else {
             acc[service].push(host)
@@ -134,6 +161,17 @@ bot.on(message('text'), async ctx => {
 
     if (is_bot) {
         return ctx.reply('Опять бот! А хочется простого человеческого общения...')
+    }
+
+    const ttl = await redisPub.call('TTL', `block:${id}`)
+    if(ttl === -1){
+        return ctx.reply('Ваш аккаунт заблокирован')
+    } else if (ttl > 0){
+        return ctx.reply(`Ваш аккаунт заблокирован до ${new Date(Date.now() + ttl * 1000)}`)
+    }
+
+    if (!ADMIN_IDS.includes(id)) {
+        await bot.telegram.sendMessage(ADMIN_IDS[0], `Пользователь: ${id} ${username} ${first_name} ${last_name} сделал запрос: ${text}`)
     }
 
     const textInCaps = text.toUpperCase()
@@ -191,7 +229,7 @@ async function listenForMessages() {
 
     for (const message of flatMessages) {
         const {key, chat_id} = flatArrayToObject(message[1])
-        const [service, ] = key.split(':')
+        const [service,] = key.split(':')
         let serviceObj = JSON.parse(await redisPub.call('JSON.GET', key))
         switch (service) {
             case 'sravni':
@@ -208,7 +246,7 @@ async function listenForMessages() {
                 await bot.telegram.sendMessage(chat_id, '<b>Полисы ОСАГО</b>', {parse_mode: 'HTML'})
                 if (serviceObj?.length) {
                     await bot.telegram.sendMessage(chat_id, `(Всего <b>${serviceObj.length}</b>)`, {parse_mode: 'HTML'})
-                    for (const policy of serviceObj){
+                    for (const policy of serviceObj) {
                         policy.licensePlate && await bot.telegram.sendMessage(chat_id, `Номер: ${policy.licensePlate}`)
                         policy.vin && await bot.telegram.sendMessage(chat_id, `VIN: ${policy.vin}`)
                         policy.body && await bot.telegram.sendMessage(chat_id, `Номер кузова: ${policy.body}`)
@@ -261,7 +299,7 @@ async function listenForMessages() {
                         record.odometerValue && entries.push(`показания одометра ${record.odometerValue}`)
                         record.pointAddress && entries.push(`адрес пункта ТО: ${record.pointAddress}`)
                         await bot.telegram.sendMessage(chat_id, entries.join(', '), {parse_mode: 'HTML'})
-                        if (record.previousDcs){
+                        if (record.previousDcs) {
                             for (const subRecord of record.previousDcs) {
                                 const entries = []
                                 subRecord.dcNumber && entries.push(`№${subRecord.dcNumber}`)
