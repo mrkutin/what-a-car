@@ -4,51 +4,42 @@ import string
 import random
 from solve_captcha import solve_base64
 
-def connect_to_redis():
-    hostname = environ.get('REDIS_HOSTNAME', 'localhost')
-    port = environ.get('REDIS_PORT', 6379)
+hostname = environ.get('REDIS_HOSTNAME', 'localhost')
+port = environ.get('REDIS_PORT', 6379)
+heartbeat_interval = 100
 
-    r = Redis(hostname, port, retry_on_timeout=True)
-    return r
 
 def ensure_group_exists(redis_connection):
     try:
         redis_connection.xgroup_create('stream:captcha:requested', 'captcha-solver', mkstream=True)
     except exceptions.ResponseError as e:
         print(e)
+
+
 def get_data(redis_connection):
-    # last_id = 0
-    sleep_ms = 100
     while True:
         try:
             resp = redis_connection.xreadgroup(
                 'captcha-solver',
                 ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(5)),
-                {'stream:captcha:requested': '>'}, count=1, block=sleep_ms
+                {'stream:captcha:requested': '>'}, count=1, block=heartbeat_interval
             )
             if resp:
-                key, messages = resp[0]
+                stream, messages = resp[0]
                 last_id, data = messages[0]
 
-                print('REDIS ID: ', last_id)
-                print('REDIS DATA token: ', data[b'token'])
-                print('REDIS DATA base64: ', data[b'base64'])
-                solution = solve_base64(data[b'base64'])
-                send_data(redis_connection, {"solution": solution})
-        except ConnectionError as e:
-            print('ERROR REDIS CONNECTION: {}'.format(e))
+                token = str.encode(data[b'key'].decode('utf8').split(':')[1])
+                base64 = redis_connection.get(data[b'key'])
 
-
-def send_data(redis_connection, data):
-    try:
-        resp = redis_connection.xadd('stream:captcha:resolved', data)
-        print(resp)
-
-    except ConnectionError as e:
-        print("ERROR REDIS CONNECTION: {}".format(e))
+                solution = solve_base64(base64)
+                redis_connection.xadd('stream:captcha:resolved',
+                                      dict(token=token, solution=solution, vin=data[b'vin'], chat_id=data[b'chat_id'],
+                                           plate=data[b'plate']))
+        except exceptions.ResponseError as e:
+            print(e)
 
 
 if __name__ == '__main__':
-    connection = connect_to_redis()
+    connection = Redis(hostname, port, retry_on_timeout=True)
     ensure_group_exists(connection)
     get_data(connection)
