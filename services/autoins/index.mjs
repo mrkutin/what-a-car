@@ -2,7 +2,7 @@
 const REDIS_HOST = process.env.REDIS_HOST || 'redis://0.0.0.0:6379'
 const REDIS_EXPIRATION_SEC = parseInt(process.env.REDIS_EXPIRATION_SEC || (3600 * 24 * 7)) // 1 week
 const HEARTBEAT_INTERVAL_MS = parseInt(process.env.HEARTBEAT_INTERVAL_MS || 1000)
-const ATTEMPTS = parseInt(process.env.ATTEMPTS || 3)
+const ATTEMPTS = parseInt(process.env.ATTEMPTS || 1)
 const DEBOUNCE_INTERVAL_MS = parseInt(process.env.DEBOUNCE_INTERVAL_MS || 60000) // 1 min
 const DEBOUNCE_COUNT = parseInt(process.env.DEBOUNCE_COUNT || 100)
 
@@ -58,10 +58,10 @@ async function listenForMessages(/*lastId = '$'*/) {
             const key = `autoins:${plate}`
             const chatSettings = JSON.parse(await redisPub.call('JSON.GET', `chat:${chat_id}`))
             let value = JSON.parse(await redisPub.call('JSON.GET', key))
-            if (!value || chatSettings?.cache === false) {
-                value = null
+            if (!value?.length || chatSettings?.cache === false) {
+                value = []
                 let attempt = 0
-                while (!value && attempt < ATTEMPTS) {
+                while (!value?.length && attempt < ATTEMPTS) {
                     try {
                         attempt++
                         console.log('Attempt: ', attempt)
@@ -73,7 +73,7 @@ async function listenForMessages(/*lastId = '$'*/) {
                     }
                 }
 
-                if(!value && attempt === ATTEMPTS){
+                if(!value?.length && attempt === ATTEMPTS){
                     throw new Error('reboot container')
                 }
 
@@ -83,7 +83,7 @@ async function listenForMessages(/*lastId = '$'*/) {
 
             await redisPub.xadd('stream:autoins:resolved', '*', 'key', key, 'chat_id', messageObj.chat_id, 'plate', plate)
 
-            if(value?.vin){
+            if(value?.[0]?.vin){
                 //debounce
                 const history = await redisPub.xrevrange('stream:vin:resolved', '+', Date.now() - DEBOUNCE_INTERVAL_MS, 'COUNT', DEBOUNCE_COUNT)
                 const idx = history.findIndex(message => {
@@ -91,7 +91,7 @@ async function listenForMessages(/*lastId = '$'*/) {
                     return value.vin === history_vin && chat_id === history_chat_id
                 })
                 if (idx === -1) {
-                    await redisPub.xadd('stream:vin:resolved', '*', 'vin', value.vin, 'chat_id', messageObj.chat_id, 'plate', plate)
+                    await redisPub.xadd('stream:vin:resolved', '*', 'vin', value[0].vin, 'chat_id', messageObj.chat_id, 'plate', plate)
                 }
             }
         }

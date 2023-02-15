@@ -14,6 +14,14 @@ puppeteer.use(AnonymizePlugin())
 
 import {headersNoBody, headersWithBody} from './headers.mjs'
 
+const split = (arr, size) => arr.reduce(
+    (acc, e, i) => {
+        i % size
+            ? acc[acc.length - 1].push(e)
+            : acc.push([e])
+        return acc
+    }, [])
+
 const getInsuranceByPlate = async (plate) => {
     console.log(`getInsuranceByPlate plate: ${plate}, ${new Date()}`)
 
@@ -41,30 +49,35 @@ const getInsuranceByPlate = async (plate) => {
     await page.waitForNavigation()
 
     const texts = await page.evaluate(() => Array.from(document.querySelectorAll('tr.data-row > td')).map(el => el.innerText))
+    if (!texts || !texts.length)
+        return []
 
-    const flattenedTexts = texts.map(el => el.split('\n').map(el => {
-        const split = el.split('\t')
-        return split[1] || split[0]
-    })).flat(2)
+    const res = []
+    const chunks = split(texts, 15)
+    for (const chunk of chunks){
+        const headers = chunk[5].includes('Номер кузова') ? headersWithBody : headersNoBody
 
-    if (!flattenedTexts.length)
-        return null
+        const flattenedTexts = chunk.map(el => el.split('\n').map(el => {
+            const split = el.split('\t')
+            return split[1] || split[0]
+        })).flat(2)
 
-    const headers = texts[5].includes('Номер кузова') ? headersWithBody : headersNoBody
+        const autoins = flattenedTexts.reduce((acc, text, idx) => {
+            acc[headers[idx]] = text
+            return acc
+        }, {})
 
-    const autoins = flattenedTexts.reduce((acc, text, idx) => {
-        acc[headers[idx]] = text
-        return acc
-    }, {})
+        res.push(autoins)
+    }
 
     await browser.close()
 
-    console.log(`getInsuranceByPlate autoins: ${JSON.stringify(autoins, null, 2)}, ${new Date()}`)
+    console.log(`getInsuranceByPlate res: ${JSON.stringify(res, null, 2)}, ${new Date()}`)
 
-    return autoins
+    return res
 }
 
-// const insurance = await getInsuranceByPlate('М602ТН48')
+// const insurance = await getInsuranceByPlate('Т270СВ77')
 // console.log(insurance)
 
 // const insurance = await getInsuranceByPlate('О189ХУ750')
