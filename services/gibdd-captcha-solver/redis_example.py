@@ -30,11 +30,14 @@ def get_data(redis_connection):
 
                 token = str.encode(data[b'key'].decode('utf8').split(':')[1])
                 base64 = redis_connection.get(data[b'key'])
-
                 solution = solve_base64(base64)
-                redis_connection.xadd('stream:captcha:resolved',
-                                      dict(token=token, solution=solution, vin=data[b'vin'], chat_id=data[b'chat_id'],
-                                           plate=data[b'plate']))
+
+                output_data = data.copy()
+                output_data[b'token'] = token
+                output_data[b'solution'] = solution
+                del output_data[b'key']
+
+                redis_connection.xadd('stream:captcha:resolved', output_data)
         except exceptions.ResponseError as e:
             print(e)
 
