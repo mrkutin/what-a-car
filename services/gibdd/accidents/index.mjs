@@ -8,7 +8,7 @@ const redisPub = new Redis(REDIS_HOST)
 const redisSub = new Redis(REDIS_HOST)
 
 import {getCaptcha} from './getCaptcha.mjs'
-import {getHistoryByVin} from './getHistoryByVin.mjs'
+import {getAccidentsByVin} from './getAccidentsByVin.mjs'
 
 const makeId = length => {
     let result = ''
@@ -31,14 +31,14 @@ const flatArrayToObject = arr => {
 }
 
 try {
-    await redisSub.xgroup('CREATE', 'stream:vin:resolved', 'gibdd:history', '$', 'MKSTREAM')
+    await redisSub.xgroup('CREATE', 'stream:vin:resolved', 'gibdd:accidents', '$', 'MKSTREAM')
 } catch (e) {
-    console.log('Group "gibdd:history" already exists in stream:vin:resolved, skipping')
+    console.log('Group "gibdd:accidents" already exists in stream:vin:resolved, skipping')
 }
 try {
-    await redisSub.xgroup('CREATE', 'stream:captcha:resolved', 'gibdd:history', '$', 'MKSTREAM')
+    await redisSub.xgroup('CREATE', 'stream:captcha:resolved', 'gibdd:accidents', '$', 'MKSTREAM')
 } catch (e) {
-    console.log('Group "gibdd:history" already exists in stream:captcha:resolved, skipping')
+    console.log('Group "gibdd:accidents" already exists in stream:captcha:resolved, skipping')
 }
 
 const hostId = makeId(7)
@@ -46,7 +46,7 @@ const hostId = makeId(7)
 async function listenForMessages(/*lastId = '$'*/) {
     const results = await redisSub.xreadgroup(
         'GROUP',
-        'gibdd:history',
+        'gibdd:accidents',
         hostId,
         'BLOCK',
         HEARTBEAT_INTERVAL_MS,
@@ -58,7 +58,7 @@ async function listenForMessages(/*lastId = '$'*/) {
         '>',
         '>')
 
-    await redisPub.set(`heartbeat:gibdd:history:${hostId}`, 1, 'PX', 2 * HEARTBEAT_INTERVAL_MS)
+    await redisPub.set(`heartbeat:gibdd:accidents:${hostId}`, 1, 'PX', 2 * HEARTBEAT_INTERVAL_MS)
     if (!results?.length) {
         return await listenForMessages()
     }
@@ -71,13 +71,13 @@ async function listenForMessages(/*lastId = '$'*/) {
         }, [])
     for (const message of flatCaptchaMessages) {
         const {token: captchaToken, solution: captchaWord, vin, chat_id, plate} = flatArrayToObject(message[1])
-        const history = await getHistoryByVin({captchaToken, captchaWord, vin} )
+        const accidents = await getAccidentsByVin({captchaToken, captchaWord, vin} )
 
-        const key = `gibdd:history:${vin}`
-        await redisPub.call('JSON.SET', key, '$', JSON.stringify(history))
+        const key = `gibdd:accidents:${vin}`
+        await redisPub.call('JSON.SET', key, '$', JSON.stringify(accidents))
         await redisPub.expire(key, REDIS_EXPIRATION_SEC)
 
-        await redisPub.xadd('stream:gibdd:history:resolved', '*', 'key', key, 'chat_id', chat_id, 'plate', plate)
+        await redisPub.xadd('stream:gibdd:accidents:resolved', '*', 'key', key, 'chat_id', chat_id, 'plate', plate)
     }
 
     //only messages with VIN
@@ -91,10 +91,10 @@ async function listenForMessages(/*lastId = '$'*/) {
         const chatSettings = JSON.parse(await redisPub.call('JSON.GET', `chat:${chat_id}`))
 
         if (vin) {
-            const key = `gibdd:history:${vin}`
+            const key = `gibdd:accidents:${vin}`
             let value = JSON.parse(await redisPub.call('JSON.GET', key))
             if(value && chatSettings?.cache === true){
-                await redisPub.xadd('stream:gibdd:history:resolved', '*', 'key', key, 'chat_id', chat_id, 'plate', plate)
+                await redisPub.xadd('stream:gibdd:accidents:resolved', '*', 'key', key, 'chat_id', chat_id, 'plate', plate)
             } else {
                 const {captchaToken, base64jpg} = await getCaptcha()
                 let captchaKey = `captcha:${captchaToken}`

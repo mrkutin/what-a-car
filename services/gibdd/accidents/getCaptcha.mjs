@@ -33,6 +33,5 @@ const getCaptcha = async () => {
     const {token: captchaToken, base64jpg} = getCaptchaRes.data
     return {captchaToken, base64jpg}
 }
-
 export {getCaptcha}
 
