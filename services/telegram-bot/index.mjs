@@ -288,7 +288,7 @@ async function listenForMessages() {
                 }
                 break
             case 'autoins':
-                await bot.telegram.sendMessage(chat_id, '<b>Полисы ОСАГО</b>', {parse_mode: 'HTML'})
+                await bot.telegram.sendMessage(chat_id, '<b>ПОЛИСЫ ОСАГО</b>', {parse_mode: 'HTML'})
                 if (serviceObj?.length) {
                     await bot.telegram.sendMessage(chat_id, `(Всего <b>${serviceObj.length}</b>)`, {parse_mode: 'HTML'})
                     for (const policy of serviceObj) {
@@ -335,7 +335,7 @@ async function listenForMessages() {
                 }
                 break
             case 'gibdd:accidents':
-                await bot.telegram.sendMessage(chat_id, '<b>УЧАСТИЕ в ДТП</b>', {parse_mode: 'HTML'})
+                await bot.telegram.sendMessage(chat_id, '<b>УЧАСТИЕ В ДТП</b>', {parse_mode: 'HTML'})
                 if (serviceObj?.length) {
                     await bot.telegram.sendMessage(chat_id, `(Всего <b>${serviceObj.length}</b>)`, {parse_mode: 'HTML'})
                     for (const accident of serviceObj) {
@@ -357,7 +357,7 @@ async function listenForMessages() {
                 }
                 break
             case 'gibdd:diagnostic-cards':
-                await bot.telegram.sendMessage(chat_id, '<b>Диагностические карты</b>', {parse_mode: 'HTML'})
+                await bot.telegram.sendMessage(chat_id, '<b>ДИАГНОСТИЧЕСКИЕ КАРТЫ</b>', {parse_mode: 'HTML'})
                 if (serviceObj?.length) {
                     for (const record of serviceObj) {
                         const entries = []
