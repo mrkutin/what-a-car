@@ -58,6 +58,88 @@ services:
     restart: on-failure
     ports:
       - 8080:8080
+  gibdd-captcha-solver-redis:
+    depends_on:
+      - redis
+    build:
+      context: ./services/gibdd-captcha-solver/
+    image: itlaboratory/what-a-car-gibdd-captcha-solver-redis
+    restart: on-failure
+    environment:
+      REDIS_HOSTNAME: redis
+      REDIS_PORT: 6379
+  gibdd-history:
+    depends_on:
+      - gibdd-captcha-solver-redis
+      - redis
+    build:
+      context: ./services/gibdd/history/
+    image: itlaboratory/what-a-car-gibdd-history
+    restart: on-failure
+    environment:
+      REDIS_HOST: redis://redis:6379
+      REDIS_EXPIRATION_SEC: 604800
+      DEBOUCE_INTERVAL_MS: 60000
+  gibdd-accidents:
+    depends_on:
+      - gibdd-captcha-solver-redis
+      - redis
+    build:
+      context: ./services/gibdd/accidents/
+    image: itlaboratory/what-a-car-gibdd-accidents
+    restart: on-failure
+    environment:
+      REDIS_HOST: redis://redis:6379
+      REDIS_EXPIRATION_SEC: 604800
+      DEBOUCE_INTERVAL_MS: 60000
+  gibdd-diagnostic-cards:
+    depends_on:
+      - gibdd-captcha-solver-redis
+      - redis
+    build:
+      context: ./services/gibdd/diagnosticCards/
+    image: itlaboratory/what-a-car-gibdd-diagnostic-cards
+    restart: on-failure
+    environment:
+      REDIS_HOST: redis://redis:6379
+      REDIS_EXPIRATION_SEC: 604800
+      DEBOUCE_INTERVAL_MS: 60000
+  gibdd-fines:
+    depends_on:
+      - gibdd-captcha-solver-redis
+      - redis
+    build:
+      context: ./services/gibdd/fines/
+    image: itlaboratory/what-a-car-gibdd-fines
+    restart: on-failure
+    environment:
+      REDIS_HOST: redis://redis:6379
+      REDIS_EXPIRATION_SEC: 604800
+      DEBOUCE_INTERVAL_MS: 60000
+  gibdd-restrictions:
+    depends_on:
+      - gibdd-captcha-solver-redis
+      - redis
+    build:
+      context: ./services/gibdd/restrictions/
+    image: itlaboratory/what-a-car-gibdd-restrictions
+    restart: on-failure
+    environment:
+      REDIS_HOST: redis://redis:6379
+      REDIS_EXPIRATION_SEC: 604800
+      DEBOUCE_INTERVAL_MS: 60000
+  gibdd-wanted:
+    depends_on:
+      - gibdd-captcha-solver-redis
+      - redis
+    build:
+      context: ./services/gibdd/wanted/
+    image: itlaboratory/what-a-car-gibdd-wanted
+    restart: on-failure
+    environment:
+      REDIS_HOST: redis://redis:6379
+      REDIS_EXPIRATION_SEC: 604800
+      DEBOUCE_INTERVAL_MS: 60000
   gibdd:
     depends_on:
       - gibdd-captcha-solver

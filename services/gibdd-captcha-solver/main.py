@@ -4,7 +4,7 @@ import string
 import random
 from solve_captcha import solve_base64
 
-hostname = environ.get('REDIS_HOSTNAME', 'localhost')
+hostname = environ.get('REDIS_HOSTNAME', '0.0.0.0')
 port = environ.get('REDIS_PORT', 6379)
 heartbeat_interval = 100
 

@@ -2,5 +2,4 @@ numpy
 opencv-python
 pybase64
 imutils
-uvicorn
-fastapi
+redis
