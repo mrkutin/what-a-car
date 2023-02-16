@@ -46,16 +46,6 @@ try {
     console.log('Group "telegram" already exists in stream:autoins:resolved, skipping')
 }
 try {
-    await redisSub.xgroup('CREATE', 'stream:gibdd:resolved', 'telegram', '$', 'MKSTREAM')
-} catch (e) {
-    console.log('Group "telegram" already exists in stream:gibdd:resolved, skipping')
-}
-try {
-    await redisSub.xgroup('CREATE', 'stream:fines:resolved', 'telegram', '$', 'MKSTREAM')
-} catch (e) {
-    console.log('Group "telegram" already exists in stream:fines:resolved, skipping')
-}
-try {
     await redisSub.xgroup('CREATE', 'stream:ingos:resolved', 'telegram', '$', 'MKSTREAM')
 } catch (e) {
     console.log('Group "telegram" already exists in stream:ingos:resolved, skipping')
@@ -65,6 +55,37 @@ try {
 } catch (e) {
     console.log('Group "telegram" already exists in stream:mosreg:resolved, skipping')
 }
+try {
+    await redisSub.xgroup('CREATE', 'stream:gibdd:history:resolved', 'telegram', '$', 'MKSTREAM')
+} catch (e) {
+    console.log('Group "telegram" already exists in stream:gibdd:history:resolved, skipping')
+}
+try {
+    await redisSub.xgroup('CREATE', 'stream:gibdd:accidents:resolved', 'telegram', '$', 'MKSTREAM')
+} catch (e) {
+    console.log('Group "telegram" already exists in stream:gibdd:accidents:resolved, skipping')
+}
+try {
+    await redisSub.xgroup('CREATE', 'stream:gibdd:restrictions:resolved', 'telegram', '$', 'MKSTREAM')
+} catch (e) {
+    console.log('Group "telegram" already exists in stream:gibdd:restrictions:resolved, skipping')
+}
+try {
+    await redisSub.xgroup('CREATE', 'stream:gibdd:diagnostic-cards:resolved', 'telegram', '$', 'MKSTREAM')
+} catch (e) {
+    console.log('Group "telegram" already exists in stream:gibdd:diagnostic-cards:resolved, skipping')
+}
+try {
+    await redisSub.xgroup('CREATE', 'stream:gibdd:wanted:resolved', 'telegram', '$', 'MKSTREAM')
+} catch (e) {
+    console.log('Group "telegram" already exists in stream:gibdd:wanted:resolved, skipping')
+}
+try {
+    await redisSub.xgroup('CREATE', 'stream:gibdd:fines:resolved', 'telegram', '$', 'MKSTREAM')
+} catch (e) {
+    console.log('Group "telegram" already exists in stream:gibdd:fines:resolved, skipping')
+}
+
 
 import {Telegraf} from 'telegraf'
 import {message} from 'telegraf/filters'
@@ -224,10 +245,18 @@ async function listenForMessages() {
         'STREAMS',
         'stream:sravni:resolved',
         'stream:autoins:resolved',
-        'stream:gibdd:resolved',
-        'stream:fines:resolved',
         'stream:ingos:resolved',
         'stream:mosreg:resolved',
+        'stream:gibdd:history:resolved',
+        'stream:gibdd:accidents:resolved',
+        'stream:gibdd:restrictions:resolved',
+        'stream:gibdd:diagnostic-cards:resolved',
+        'stream:gibdd:wanted:resolved',
+        'stream:gibdd:fines:resolved',
+        '>',
+        '>',
+        '>',
+        '>',
         '>',
         '>',
         '>',
@@ -242,7 +271,10 @@ async function listenForMessages() {
 
     for (const message of flatMessages) {
         const {key, chat_id} = flatArrayToObject(message[1])
-        const [service,] = key.split(':')
+        const keyParts = key.split(':')
+
+        const service = keyParts.length > 2 ? `${keyParts[0]}:${keyParts[1]}` : keyParts[0]
+
         let serviceObj = JSON.parse(await redisPub.call('JSON.GET', key))
         switch (service) {
             case 'sravni':
@@ -280,7 +312,7 @@ async function listenForMessages() {
                     await bot.telegram.sendMessage(chat_id, 'не обнаружены')
                 }
                 break
-            case 'gibdd':
+            case 'gibdd:history':
                 if (serviceObj?.vehicle) {
                     await bot.telegram.sendMessage(chat_id, '<b>АВТОМОБИЛЬ</b>', {parse_mode: 'HTML'})
                     await bot.telegram.sendMessage(chat_id, `VIN: ${serviceObj.vehicle.vin || ''}`)
@@ -301,10 +333,33 @@ async function listenForMessages() {
                         await bot.telegram.sendMessage(chat_id, `${period.to ? `С ${period.from} по ${period.to}` : `${period.from}`}: ${period.ownerType}, ${period.operation}`)
                     }
                 }
-
+                break
+            case 'gibdd:accidents':
+                await bot.telegram.sendMessage(chat_id, '<b>УЧАСТИЕ в ДТП</b>', {parse_mode: 'HTML'})
+                if (serviceObj?.length) {
+                    await bot.telegram.sendMessage(chat_id, `(Всего <b>${serviceObj.length}</b>)`, {parse_mode: 'HTML'})
+                    for (const accident of serviceObj) {
+                        await bot.telegram.sendMessage(chat_id, `${accident.AccidentDateTime || ''} ${accident.AccidentPlace || ''}, ${accident.AccidentType ? accident.AccidentType.toLowerCase() : ''}, количество участников: ${accident.VehicleAmount || ''}${accident?.DamagePoints?.length ? `, повреждения: ${accident?.DamagePoints.join(', ')}` : ''}`)
+                    }
+                } else {
+                    await bot.telegram.sendMessage(chat_id, 'не зафиксировано')
+                }
+                break
+            case 'gibdd:restrictions':
+                await bot.telegram.sendMessage(chat_id, '<b>ОГРАНИЧЕНИЯ</b>', {parse_mode: 'HTML'})
+                if (serviceObj?.length) {
+                    await bot.telegram.sendMessage(chat_id, `(Всего <b>${serviceObj.length}</b>)`, {parse_mode: 'HTML'})
+                    for (const restriction of serviceObj) {
+                        await bot.telegram.sendMessage(chat_id, `${restriction.ogrkod || ''}, ${restriction.divtype || ''}${restriction.dateogr ? `, с ${restriction.dateogr}` : ''}${restriction.osnOgr ? `, основание: ${restriction.osnOgr}` : ''}${restriction.phone ? `, телефон инициатора: ${restriction.phone}` : ''}${restriction.gid ? `, ключ ГИБДД: ${restriction.gid}` : ''}`)
+                    }
+                } else {
+                    await bot.telegram.sendMessage(chat_id, 'не обнаружены')
+                }
+                break
+            case 'gibdd:diagnostic-cards':
                 await bot.telegram.sendMessage(chat_id, '<b>Диагностические карты</b>', {parse_mode: 'HTML'})
-                if (serviceObj?.diagnosticCards?.length) {
-                    for (const record of serviceObj.diagnosticCards) {
+                if (serviceObj?.length) {
+                    for (const record of serviceObj) {
                         const entries = []
                         record.dcNumber && entries.push(`№${record.dcNumber}`)
                         record.dcDate && entries.push(`от ${record.dcDate}`)
@@ -327,42 +382,23 @@ async function listenForMessages() {
                 } else {
                     await bot.telegram.sendMessage(chat_id, 'не обнаружены')
                 }
-
-                await bot.telegram.sendMessage(chat_id, '<b>УЧАСТИЕ в ДТП</b>', {parse_mode: 'HTML'})
-                if (serviceObj?.accidents?.length) {
-                    await bot.telegram.sendMessage(chat_id, `(Всего <b>${serviceObj.accidents.length}</b>)`, {parse_mode: 'HTML'})
-                    for (const accident of serviceObj.accidents) {
-                        await bot.telegram.sendMessage(chat_id, `${accident.AccidentDateTime || ''} ${accident.AccidentPlace || ''}, ${accident.AccidentType ? accident.AccidentType.toLowerCase() : ''}, количество участников: ${accident.VehicleAmount || ''}${accident?.DamagePoints?.length ? `, повреждения: ${accident?.DamagePoints.join(', ')}` : ''}`)
-                    }
-                } else {
-                    await bot.telegram.sendMessage(chat_id, 'не зафиксировано')
-                }
-
-                await bot.telegram.sendMessage(chat_id, '<b>ОГРАНИЧЕНИЯ</b>', {parse_mode: 'HTML'})
-                if (serviceObj?.restrictions?.length) {
-                    await bot.telegram.sendMessage(chat_id, `(Всего <b>${serviceObj.restrictions.length}</b>)`, {parse_mode: 'HTML'})
-                    for (const restriction of serviceObj.restrictions) {
-                        await bot.telegram.sendMessage(chat_id, `${restriction.ogrkod || ''}, ${restriction.divtype || ''}${restriction.dateogr ? `, с ${restriction.dateogr}` : ''}${restriction.osnOgr ? `, основание: ${restriction.osnOgr}` : ''}${restriction.phone ? `, телефон инициатора: ${restriction.phone}` : ''}${restriction.gid ? `, ключ ГИБДД: ${restriction.gid}` : ''}`)
-                    }
-                } else {
-                    await bot.telegram.sendMessage(chat_id, 'не обнаружены')
-                }
-
+                break
+            case 'gibdd:wanted':
                 await bot.telegram.sendMessage(chat_id, '<b>НАХОЖДЕНИЕ В РОЗЫСКЕ</b>', {parse_mode: 'HTML'})
-                if (serviceObj?.wanted?.length) {
-                    await bot.telegram.sendMessage(chat_id, `(Всего <b>${serviceObj.wanted.length}</b>)`, {parse_mode: 'HTML'})
-                    for (const record of serviceObj.wanted) {
+                if (serviceObj?.length) {
+                    await bot.telegram.sendMessage(chat_id, `(Всего <b>${serviceObj.length}</b>)`, {parse_mode: 'HTML'})
+                    for (const record of serviceObj) {
                         await bot.telegram.sendMessage(chat_id, `${record.w_model ? `Автомобиль ${record.w_model}` : ''}${record.w_god_vyp ? ` ${record.w_god_vyp} года выпуска` : ''}${record.w_reg_zn ? `, гос. номер ${record.w_reg_zn}` : ''}${record.w_vin ? `, VIN ${record.w_vin}` : ''}${record.w_kuzov ? `, номер кузова ${record.w_kuzov}` : ''}${record.w_shassi ? `, номер шасси ${record.w_shassi}` : ''}${record.w_dvig ? `, номер двигателя ${record.w_dvig}` : ''}${record.w_data_pu ? `, дата постоянного учета в розыке: ${record.w_data_pu}` : ''}${record.w_reg_inic ? `, регион инициатора розыска: ${record.w_reg_inic}` : ''}`)
                     }
                 } else {
                     await bot.telegram.sendMessage(chat_id, 'не обнаружено')
                 }
                 break
-            case 'fines':
+            case 'gibdd:fines':
                 await bot.telegram.sendMessage(chat_id, '<b>ШТРАФЫ</b>', {parse_mode: 'HTML'})
-                if (serviceObj?.fines?.length) {
-                    await bot.telegram.sendMessage(chat_id, `(Всего <b>${serviceObj.fines.length}</b> на сумму <b>${serviceObj.fines.reduce((acc, fine) => acc + (isNaN(parseInt(fine.Summa)) ? 0 : parseInt(fine.Summa)), 0)}</b> руб.)`, {parse_mode: 'HTML'})
-                    for (const fine of serviceObj.fines) {
+                if (serviceObj?.length) {
+                    await bot.telegram.sendMessage(chat_id, `(Всего <b>${serviceObj.length}</b> на сумму <b>${serviceObj.reduce((acc, fine) => acc + (isNaN(parseInt(fine.Summa)) ? 0 : parseInt(fine.Summa)), 0)}</b> руб.)`, {parse_mode: 'HTML'})
+                    for (const fine of serviceObj) {
                         await bot.telegram.sendMessage(chat_id, `${fine.DateDecis || ''} <b>${fine.Summa || 0} руб.</b>${fine.enableDiscount ? ` (можно оплатить со скидкой до ${fine.DateDiscount})` : ''}, ${fine.KoAPcode || ''}, ${fine.KoAPtext || ''}, ${fine.division?.name ? `${fine.division.name}` : ''}${fine.division?.fulladdr ? `, ${fine.division.fulladdr}` : ''}`, {parse_mode: 'HTML'})
                     }
                 } else {
