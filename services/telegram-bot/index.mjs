@@ -271,8 +271,8 @@ async function listenForMessages() {
 
     for (const message of flatMessages) {
         const {key, chat_id} = flatArrayToObject(message[1])
-        const keyParts = key.split(':')
 
+        const keyParts = key.split(':')
         const service = keyParts.length > 2 ? `${keyParts[0]}:${keyParts[1]}` : keyParts[0]
 
         let serviceObj = JSON.parse(await redisPub.call('JSON.GET', key))

@@ -16,26 +16,53 @@ import Redis from 'ioredis'
 
 const redisPub = new Redis(REDIS_HOST)
 const redisSub = new Redis(REDIS_HOST)
-try {
-    await redisSub.xgroup('CREATE', 'stream:sravni:resolved', 'storage', '$', 'MKSTREAM')
-} catch (e) {
-    console.log('Group "storage" already exists in stream:sravni:resolved, skipping')
-}
+
 try {
     await redisSub.xgroup('CREATE', 'stream:autoins:resolved', 'storage', '$', 'MKSTREAM')
 } catch (e) {
     console.log('Group "storage" already exists in stream:autoins:resolved, skipping')
 }
 try {
-    await redisSub.xgroup('CREATE', 'stream:gibdd:resolved', 'storage', '$', 'MKSTREAM')
+    await redisSub.xgroup('CREATE', 'stream:gibdd:accidents:resolved', 'storage', '$', 'MKSTREAM')
 } catch (e) {
-    console.log('Group "storage" already exists in stream:gibdd:resolved, skipping')
+    console.log('Group "storage" already exists in stream:gibdd:accidents:resolved, skipping')
 }
 try {
-    await redisSub.xgroup('CREATE', 'stream:fines:resolved', 'storage', '$', 'MKSTREAM')
+    await redisSub.xgroup('CREATE', 'stream:gibdd:diagnostic-cards:resolved', 'storage', '$', 'MKSTREAM')
 } catch (e) {
-    console.log('Group "storage" already exists in stream:fines:resolved, skipping')
+    console.log('Group "storage" already exists in stream:gibdd:diagnostic-cards:resolved, skipping')
 }
+try {
+    await redisSub.xgroup('CREATE', 'stream:gibdd:fines:resolved', 'storage', '$', 'MKSTREAM')
+} catch (e) {
+    console.log('Group "storage" already exists in stream:gibdd:fines:resolved, skipping')
+}
+try {
+    await redisSub.xgroup('CREATE', 'stream:gibdd:history:resolved', 'storage', '$', 'MKSTREAM')
+} catch (e) {
+    console.log('Group "storage" already exists in stream:gibdd:history:resolved, skipping')
+}
+try {
+    await redisSub.xgroup('CREATE', 'stream:gibdd:restrictions:resolved', 'storage', '$', 'MKSTREAM')
+} catch (e) {
+    console.log('Group "storage" already exists in stream:gibdd:restrictions:resolved, skipping')
+}
+try {
+    await redisSub.xgroup('CREATE', 'stream:gibdd:wanted:resolved', 'storage', '$', 'MKSTREAM')
+} catch (e) {
+    console.log('Group "storage" already exists in stream:gibdd:wanted:resolved, skipping')
+}
+try {
+    await redisSub.xgroup('CREATE', 'stream:ingos:resolved', 'storage', '$', 'MKSTREAM')
+} catch (e) {
+    console.log('Group "storage" already exists in stream:ingos:resolved, skipping')
+}
+try {
+    await redisSub.xgroup('CREATE', 'stream:sravni:resolved', 'storage', '$', 'MKSTREAM')
+} catch (e) {
+    console.log('Group "storage" already exists in stream:sravni:resolved, skipping')
+}
+
 try {
     await redisSub.xgroup('CREATE', 'stream:plate:requested', 'storage', '$', 'MKSTREAM')
 } catch (e) {
@@ -65,7 +92,9 @@ const flatArrayToObject = arr => {
 const hostId = makeId(7)
 
 async function listenForMessages() {
-    const results = await redisSub.xreadgroup(
+    await redisPub.set(`heartbeat:storage:${hostId}`, 1, 'PX', 2 * HEARTBEAT_INTERVAL_MS)
+
+    const plateRequestedResults = await redisSub.xreadgroup(
         'GROUP',
         'storage',
         hostId,
@@ -74,11 +103,54 @@ async function listenForMessages() {
         'COUNT',
         10,
         'STREAMS',
-        'stream:sravni:resolved',
-        'stream:autoins:resolved',
-        'stream:gibdd:resolved',
-        'stream:fines:resolved',
+        // 'stream:sravni:resolved',
+        // 'stream:autoins:resolved',
+        // 'stream:gibdd:resolved',
+        // 'stream:fines:resolved',
         'stream:plate:requested',
+        '>'
+    )
+
+    // if(!results?.length){
+    //     return await listenForMessages()
+    // }
+
+    if(plateRequestedResults?.length){
+        const flatMessagesPlateRequested = plateRequestedResults
+            .reduce((acc, result) => {
+                return acc.concat(result[1])//messages
+            }, [])
+
+        for (const message of flatMessagesPlateRequested) {
+            const {plate, chat_id, user_id, user_name, user_first_name, user_last_name, user_language_code} = flatArrayToObject(message[1])
+            const now = new Date()
+            await chats.insertOne({chat_id: parseInt(chat_id), user_id: parseInt(user_id), user_name, user_first_name, user_last_name, user_language_code, request: plate, createdBy: now})
+        }
+    }
+
+
+    const resolvedResults = await redisSub.xreadgroup(
+        'GROUP',
+        'storage',
+        hostId,
+        'BLOCK',
+        HEARTBEAT_INTERVAL_MS,
+        'COUNT',
+        10,
+        'STREAMS',
+        'stream:autoins:resolved',
+        'stream:gibdd:accidents:resolved',
+        'stream:gibdd:diagnostic-cards:resolved',
+        'stream:gibdd:fines:resolved',
+        'stream:gibdd:history:resolved',
+        'stream:gibdd:restrictions:resolved',
+        'stream:gibdd:wanted:resolved',
+        'stream:ingos:resolved',
+        'stream:sravni:resolved',
+        '>',
+        '>',
+        '>',
+        '>',
         '>',
         '>',
         '>',
@@ -86,51 +158,38 @@ async function listenForMessages() {
         '>'
     )
 
-    await redisPub.set(`heartbeat:storage:${hostId}`, 1, 'PX', 2 * HEARTBEAT_INTERVAL_MS)
-    if(!results?.length){
-        return await listenForMessages()
-    }
+    if(resolvedResults?.length){
+        const flatMessagesResolved = resolvedResults
+            .reduce((acc, result) => {
+                return acc.concat(result[1])//messages
+            }, [])
 
-    const flatMessagesPlateRequested = results
-        .filter(([stream]) => stream === 'stream:plate:requested')
-        .reduce((acc, result) => {
-            return acc.concat(result[1])//messages
-        }, [])
+        for (const message of flatMessagesResolved) {
+            const {key, chat_id, plate} = flatArrayToObject(message[1])
 
-    for (const message of flatMessagesPlateRequested) {
-        const {plate, chat_id, user_id, user_name, user_first_name, user_last_name, user_language_code} = flatArrayToObject(message[1])
-        const now = new Date()
-        await chats.insertOne({chat_id: parseInt(chat_id), user_id: parseInt(user_id), user_name, user_first_name, user_last_name, user_language_code, request: plate, createdBy: now})
-    }
+            const keyParts = key.split(':')
+            const service = keyParts.length > 2 ? `${keyParts[0]}:${keyParts[1]}` : keyParts[0]
 
-    const flatMessagesResolved = results
-        .filter(([stream]) => stream !== 'stream:plate:requested')
-        .reduce((acc, result) => {
-        return acc.concat(result[1])//messages
-    }, [])
+            let serviceObj = JSON.parse(await redisPub.call('JSON.GET', key))
 
-    for (const message of flatMessagesResolved) {
-        const {key, chat_id, plate} = flatArrayToObject(message[1])
-        const [service,] = key.split(':')
-        let serviceObj = JSON.parse(await redisPub.call('JSON.GET', key))
+            const foundResult = await plates.findOne({plate})
+            const now = new Date()
 
-        const foundResult = await plates.findOne({plate})
-        const now = new Date()
-
-        if (!foundResult) {
-            await plates.insertOne({plate, chats: [parseInt(chat_id)], services: {[service]: {...serviceObj, updatedAt: now}}, createdBy: now})
-        } else {
-            await plates.updateOne({plate}, {
-                $addToSet: {
-                    chats: parseInt(chat_id)
-                },
-                $set: {
-                    [`services.${service}`]: {...serviceObj, updatedAt: now},
-                    updatedAt: now
-                }
-            })
+            if (!foundResult) {
+                await plates.insertOne({plate, chats: [parseInt(chat_id)], services: {[service]: {...serviceObj, updatedAt: now}}, createdBy: now})
+            } else {
+                await plates.updateOne({plate}, {
+                    $addToSet: {
+                        chats: parseInt(chat_id)
+                    },
+                    $set: {
+                        [`services.${service}`]: {...serviceObj, updatedAt: now},
+                        updatedAt: now
+                    }
+                })
+            }
+            console.log({[service]: serviceObj, plate})
         }
-        console.log({[service]: serviceObj, plate})
     }
 
     await listenForMessages(/*messages[messages.length - 1][0]*/)
