@@ -11,11 +11,32 @@ heartbeat_interval = 100
 
 def ensure_group_exists(redis_connection):
     try:
-        redis_connection.xgroup_create('stream:captcha:vin:requested', 'captcha-solver', mkstream=True)
+        redis_connection.xgroup_create('stream:captcha:accidents:requested', 'captcha-solver', mkstream=True)
     except exceptions.ResponseError as e:
         print(e)
+
     try:
-        redis_connection.xgroup_create('stream:captcha:sts:requested', 'captcha-solver', mkstream=True)
+        redis_connection.xgroup_create('stream:captcha:diagnostic-cards:requested', 'captcha-solver', mkstream=True)
+    except exceptions.ResponseError as e:
+        print(e)
+
+    try:
+        redis_connection.xgroup_create('stream:captcha:fines:requested', 'captcha-solver', mkstream=True)
+    except exceptions.ResponseError as e:
+        print(e)
+
+    try:
+        redis_connection.xgroup_create('stream:captcha:history:requested', 'captcha-solver', mkstream=True)
+    except exceptions.ResponseError as e:
+        print(e)
+
+    try:
+        redis_connection.xgroup_create('stream:captcha:restrictions:requested', 'captcha-solver', mkstream=True)
+    except exceptions.ResponseError as e:
+        print(e)
+
+    try:
+        redis_connection.xgroup_create('stream:captcha:wanted:requested', 'captcha-solver', mkstream=True)
     except exceptions.ResponseError as e:
         print(e)
 
@@ -27,8 +48,12 @@ def get_data(redis_connection):
                 'captcha-solver',
                 ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(5)),
                 {
-                    'stream:captcha:vin:requested': '>',
-                    'stream:captcha:sts:requested': '>'
+                    'stream:captcha:accidents:requested': '>',
+                    'stream:captcha:diagnostic-cards:requested': '>',
+                    'stream:captcha:fines:requested': '>',
+                    'stream:captcha:history:requested': '>',
+                    'stream:captcha:restrictions:requested': '>',
+                    'stream:captcha:wanted:requested': '>',
                 }, count=1, block=heartbeat_interval
             )
             if resp:
@@ -44,10 +69,18 @@ def get_data(redis_connection):
                 output_data[b'solution'] = solution
                 del output_data[b'key']
 
-                if stream == b'stream:captcha:vin:requested':
-                    redis_connection.xadd('stream:captcha:vin:resolved', output_data)
-                if stream == b'stream:captcha:sts:requested':
-                    redis_connection.xadd('stream:captcha:sts:resolved', output_data)
+                if stream == b'stream:captcha:accidents:requested':
+                    redis_connection.xadd('stream:captcha:accidents:resolved', output_data)
+                if stream == b'stream:captcha:diagnostic-cards:requested':
+                    redis_connection.xadd('stream:captcha:diagnostic-cards:resolved', output_data)
+                if stream == b'stream:captcha:fines:requested':
+                    redis_connection.xadd('stream:captcha:fines:resolved', output_data)
+                if stream == b'stream:captcha:history:requested':
+                    redis_connection.xadd('stream:captcha:history:resolved', output_data)
+                if stream == b'stream:captcha:restrictions:requested':
+                    redis_connection.xadd('stream:captcha:restrictions:resolved', output_data)
+                if stream == b'stream:captcha:wanted:requested':
+                    redis_connection.xadd('stream:captcha:wanted:resolved', output_data)
 
         except exceptions.ResponseError as e:
             print(e)

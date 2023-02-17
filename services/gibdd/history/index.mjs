@@ -40,9 +40,9 @@ try {
 }
 //captcha needs to be processed by one host of one service, so the group name is common
 try {
-    await redisSub.xgroup('CREATE', 'stream:captcha:vin:resolved', 'gibdd', '$', 'MKSTREAM')
+    await redisSub.xgroup('CREATE', 'stream:captcha:history:resolved', 'gibdd:history', '$', 'MKSTREAM')
 } catch (e) {
-    console.log('Group "gibdd" already exists in stream:captcha:vin:resolved, skipping')
+    console.log('Group "gibdd:history" already exists in stream:captcha:history:resolved, skipping')
 }
 
 const hostId = makeId(7)
@@ -51,7 +51,7 @@ async function listenForMessages(/*lastId = '$'*/) {
     await redisPub.set(`heartbeat:gibdd:history:${hostId}`, 1, 'PX', 2 * HEARTBEAT_INTERVAL_MS)
 
     const vinResults = await redisSub.xreadgroup('GROUP', 'gibdd:history', hostId, 'BLOCK', HEARTBEAT_INTERVAL_MS, 'COUNT', 1, 'STREAMS', 'stream:vin:resolved', '>')
-    const captchaVinResults = await redisSub.xreadgroup('GROUP', 'gibdd', hostId, 'BLOCK', HEARTBEAT_INTERVAL_MS, 'COUNT', 1, 'STREAMS', 'stream:captcha:vin:resolved', '>')
+    const captchaVinResults = await redisSub.xreadgroup('GROUP', 'gibdd:history', hostId, 'BLOCK', HEARTBEAT_INTERVAL_MS, 'COUNT', 1, 'STREAMS', 'stream:captcha:history:resolved', '>')
 
     if (vinResults?.length) {
         //only messages with VIN
@@ -65,21 +65,29 @@ async function listenForMessages(/*lastId = '$'*/) {
 
             if (vin) {
                 const key = `gibdd:history:${vin}`
-                //debounce
-                const history = await redisPub.xrevrange('stream:gibdd:history:resolved', '+', Date.now() - DEBOUNCE_INTERVAL_MS, 'COUNT', DEBOUNCE_COUNT)
-                const idx = history.findIndex(message => {
-                    const {key: history_key, chat_id: history_chat_id} = flatArrayToObject(message[1])
-                    return key === history_key && chat_id === history_chat_id
-                })
-                if (idx === -1) {
-                    let value = JSON.parse(await redisPub.call('JSON.GET', key))
-                    if (value && chatSettings?.cache === true) {
+                let value = JSON.parse(await redisPub.call('JSON.GET', key))
+                if (value && chatSettings?.cache === true) {
+                    //debounce
+                    const history = await redisPub.xrevrange('stream:gibdd:history:resolved', '+', Date.now() - DEBOUNCE_INTERVAL_MS, 'COUNT', DEBOUNCE_COUNT)
+                    const idx = history.findIndex(message => {
+                        const {key: history_key, chat_id: history_chat_id} = flatArrayToObject(message[1])
+                        return key === history_key && chat_id === history_chat_id
+                    })
+                    if (idx === -1) {
                         await redisPub.xadd('stream:gibdd:history:resolved', '*', 'key', key, 'chat_id', chat_id, 'plate', plate)
-                    } else {
+                    }
+                } else {
+                    //debounce
+                    const history = await redisPub.xrevrange('stream:captcha:history:requested', '+', Date.now() - DEBOUNCE_INTERVAL_MS, 'COUNT', DEBOUNCE_COUNT)
+                    const idx = history.findIndex(message => {
+                        const {vin: history_vin, chat_id: history_chat_id} = flatArrayToObject(message[1])
+                        return vin === history_vin && chat_id === history_chat_id
+                    })
+                    if (idx === -1) {
                         const {captchaToken, base64jpg} = await getCaptcha()
                         let captchaKey = `captcha:${captchaToken}`
                         await redisPub.set(captchaKey, base64jpg, 'EX', 60)
-                        await redisPub.xadd('stream:captcha:vin:requested', '*', 'key', captchaKey, 'token', captchaToken, 'vin', vin, 'chat_id', chat_id, 'plate', plate)
+                        await redisPub.xadd('stream:captcha:history:requested', '*', 'key', captchaKey, 'token', captchaToken, 'vin', vin, 'chat_id', chat_id, 'plate', plate)
                     }
                 }
             }
@@ -94,12 +102,10 @@ async function listenForMessages(/*lastId = '$'*/) {
             }, [])
         for (const message of flatCaptchaMessages) {
             const {token: captchaToken, solution: captchaWord, vin, chat_id, plate} = flatArrayToObject(message[1])
-            const res = await getHistoryByVin({captchaToken, captchaWord, vin})
-
             const key = `gibdd:history:${vin}`
+            const res = await getHistoryByVin({captchaToken, captchaWord, vin})
             await redisPub.call('JSON.SET', key, '$', JSON.stringify(res))
             await redisPub.expire(key, REDIS_EXPIRATION_SEC)
-
             await redisPub.xadd('stream:gibdd:history:resolved', '*', 'key', key, 'chat_id', chat_id, 'plate', plate)
         }
     }
