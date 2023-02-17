@@ -67,7 +67,7 @@ async function listenForMessages(/*lastId = '$'*/) {
             await redisPub.xadd('stream:ingos:resolved', '*', 'key', key, 'chat_id', chat_id, 'plate', plate)
 
             const vin = value.identifiers.find(identifier => identifier.type?.name === 'VIN')
-            if(vin.number){
+            if(vin?.number){
                 //debounce
                 const history = await redisPub.xrevrange('stream:vin:resolved', '+', Date.now() - DEBOUNCE_INTERVAL_MS, 'COUNT', DEBOUNCE_COUNT)
                 const idx = history.findIndex(message => {
@@ -80,7 +80,7 @@ async function listenForMessages(/*lastId = '$'*/) {
             }
 
             const sts = value.documents.find(document => document.type?.name === 'СТС')
-            if(sts.number){
+            if(sts?.number){
                 //debounce
                 const history = await redisPub.xrevrange('stream:sts:resolved', '+', Date.now() - DEBOUNCE_INTERVAL_MS, 'COUNT', DEBOUNCE_COUNT)
                 const idx = history.findIndex(message => {

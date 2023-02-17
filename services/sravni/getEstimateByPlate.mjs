@@ -128,7 +128,7 @@ const getEstimateByPlate = async plate => {
 }
 
 //const insurance = await getEstimateByPlate('А777МР77 ')
-const insurance = await getEstimateByPlate('р673хк750 ')
-console.log(insurance)
+// const insurance = await getEstimateByPlate('р673хк750 ')
+// console.log(insurance)
 
 export {getEstimateByPlate}
