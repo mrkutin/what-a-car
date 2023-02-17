@@ -6,7 +6,7 @@ from solve_captcha import solve_base64
 
 hostname = environ.get('REDIS_HOSTNAME', '0.0.0.0')
 port = environ.get('REDIS_PORT', 6379)
-heartbeat_interval = 100
+heartbeat_interval = 1000
 
 
 def ensure_group_exists(redis_connection):
@@ -54,7 +54,7 @@ def get_data(redis_connection):
                     'stream:captcha:history:requested': '>',
                     'stream:captcha:restrictions:requested': '>',
                     'stream:captcha:wanted:requested': '>',
-                }, count=1, block=heartbeat_interval
+                }, count=100, block=heartbeat_interval
             )
             if resp:
                 stream, messages = resp[0]
