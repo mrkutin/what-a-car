@@ -69,7 +69,6 @@ async function listenForMessages(/*lastId = '$'*/) {
                 const history = await redisPub.xrevrange('stream:gibdd:fines:resolved', '+', Date.now() - DEBOUNCE_INTERVAL_MS, 'COUNT', DEBOUNCE_COUNT)
                 const idx = history.findIndex(message => {
                     const {key: history_key, chat_id: history_chat_id} = flatArrayToObject(message[1])
-                    console.log()
                     return key === history_key && chat_id === history_chat_id
                 })
                 if (idx === -1) {
