@@ -154,12 +154,18 @@ bot.command('cache', async ctx => {
     const {message} = update
     const {text, chat} = message
     const param = text.split(' ')[1]
+
+    if(!param){
+        const value = JSON.parse(await redisPub.call('JSON.GET', `chat:${chat.id}`))
+        return await ctx.reply(`Cache is ${value.cache ? 'on' : 'off'}`)
+    }
+
     const cache = ['on', 'true', '1', 'yes', 'enable'].includes(param.toLowerCase())
     await redisPub.call('JSON.SET', `chat:${chat.id}`, '$', JSON.stringify({cache}))
     if (cache) {
-        await ctx.reply('Cache enabled')
+        await ctx.reply('Cache has been enabled')
     } else {
-        await ctx.reply('Cache disabled')
+        await ctx.reply('Cache has been disabled')
     }
 })
 
