@@ -2,8 +2,6 @@
 const REDIS_HOST = process.env.REDIS_HOST || 'redis://0.0.0.0:6379'
 const REDIS_EXPIRATION_SEC = parseInt(process.env.REDIS_EXPIRATION_SEC || (3600 * 24 * 7)) // 1 week
 const HEARTBEAT_INTERVAL_MS = parseInt(process.env.HEARTBEAT_INTERVAL_MS || 1000)
-const DEBOUNCE_INTERVAL_MS = parseInt(process.env.DEBOUNCE_INTERVAL_MS || 60000) // 1 min
-const DEBOUNCE_COUNT = parseInt(process.env.DEBOUNCE_COUNT || 100)
 
 import Redis from 'ioredis'
 
@@ -66,28 +64,12 @@ async function listenForMessages(/*lastId = '$'*/) {
             await redisPub.xadd('stream:sravni:resolved', '*', 'key', key, 'chat_id', chat_id, 'plate', plate)
 
             if(value.vin){
-                //debounce
-                const history = await redisPub.xrevrange('stream:vin:resolved', '+', Date.now() - DEBOUNCE_INTERVAL_MS, 'COUNT', DEBOUNCE_COUNT)
-                const idx = history.findIndex(message => {
-                    const {vin: history_vin, chat_id: history_chat_id} = flatArrayToObject(message[1])
-                    return value.vin === history_vin && chat_id === history_chat_id
-                })
-                if (idx === -1) {
-                    await redisPub.xadd('stream:vin:resolved', '*', 'vin', value.vin, 'chat_id', messageObj.chat_id, 'plate', plate)
-                }
+                await redisPub.xadd('stream:vin:resolved', '*', 'vin', value.vin, 'chat_id', messageObj.chat_id, 'plate', plate)
             }
 
             if(value.carDocument?.documentType === 'sts'){
                 const sts = `${value.carDocument.series}${value.carDocument.number}`
-                //debounce
-                const history = await redisPub.xrevrange('stream:sts:resolved', '+', Date.now() - DEBOUNCE_INTERVAL_MS, 'COUNT', DEBOUNCE_COUNT)
-                const idx = history.findIndex(message => {
-                    const {sts: history_sts, chat_id: history_chat_id} = flatArrayToObject(message[1])
-                    return sts === history_sts && chat_id === history_chat_id
-                })
-                if (idx === -1) {
-                    await redisPub.xadd('stream:sts:resolved', '*', 'sts', sts, 'chat_id', messageObj.chat_id, 'plate', plate)
-                }
+                await redisPub.xadd('stream:sts:resolved', '*', 'sts', sts, 'chat_id', messageObj.chat_id, 'plate', plate)
             }
         }
     }

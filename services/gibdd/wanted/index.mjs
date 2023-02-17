@@ -1,6 +1,8 @@
 const REDIS_HOST = process.env.REDIS_HOST || 'redis://0.0.0.0:6379'
 const REDIS_EXPIRATION_SEC = parseInt(process.env.REDIS_EXPIRATION_SEC || (3600 * 24 * 7)) // 1 week
 const HEARTBEAT_INTERVAL_MS = parseInt(process.env.HEARTBEAT_INTERVAL_MS || 1000)
+const DEBOUNCE_INTERVAL_MS = parseInt(process.env.DEBOUNCE_INTERVAL_MS || 60000) // 1 min
+const DEBOUNCE_COUNT = parseInt(process.env.DEBOUNCE_COUNT || 100)
 
 import Redis from 'ioredis'
 
@@ -63,14 +65,22 @@ async function listenForMessages(/*lastId = '$'*/) {
 
             if (vin) {
                 const key = `gibdd:wanted:${vin}`
-                let value = JSON.parse(await redisPub.call('JSON.GET', key))
-                if (value && chatSettings?.cache === true) {
-                    await redisPub.xadd('stream:gibdd:wanted:resolved', '*', 'key', key, 'chat_id', chat_id, 'plate', plate)
-                } else {
-                    const {captchaToken, base64jpg} = await getCaptcha()
-                    let captchaKey = `captcha:${captchaToken}`
-                    await redisPub.set(captchaKey, base64jpg, 'EX', 60)
-                    await redisPub.xadd('stream:captcha:vin:requested', '*', 'key', captchaKey, 'token', captchaToken, 'vin', vin, 'chat_id', chat_id, 'plate', plate)
+                //debounce
+                const history = await redisPub.xrevrange('stream:gibdd:wanted:resolved', '+', Date.now() - DEBOUNCE_INTERVAL_MS, 'COUNT', DEBOUNCE_COUNT)
+                const idx = history.findIndex(message => {
+                    const {key: history_key, chat_id: history_chat_id} = flatArrayToObject(message[1])
+                    return key === history_key && chat_id === history_chat_id
+                })
+                if (idx === -1) {
+                    let value = JSON.parse(await redisPub.call('JSON.GET', key))
+                    if (value && chatSettings?.cache === true) {
+                        await redisPub.xadd('stream:gibdd:wanted:resolved', '*', 'key', key, 'chat_id', chat_id, 'plate', plate)
+                    } else {
+                        const {captchaToken, base64jpg} = await getCaptcha()
+                        let captchaKey = `captcha:${captchaToken}`
+                        await redisPub.set(captchaKey, base64jpg, 'EX', 60)
+                        await redisPub.xadd('stream:captcha:vin:requested', '*', 'key', captchaKey, 'token', captchaToken, 'vin', vin, 'chat_id', chat_id, 'plate', plate)
+                    }
                 }
             }
         }
