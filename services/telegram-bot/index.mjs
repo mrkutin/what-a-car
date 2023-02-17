@@ -294,6 +294,7 @@ async function listenForMessages() {
                             policy.licensePlate && await bot.telegram.sendMessage(chat_id, `Номер: ${policy.licensePlate}`)
                             policy.vin && await bot.telegram.sendMessage(chat_id, `VIN: ${policy.vin}`)
                             policy.body && await bot.telegram.sendMessage(chat_id, `Номер кузова: ${policy.body}`)
+                            policy.chassis && await bot.telegram.sendMessage(chat_id, `Номер шасси: ${policy.chassis}`)
                             policy.makeAndModel && await bot.telegram.sendMessage(chat_id, `Автомобиль: ${policy.makeAndModel}`)
                             policy.powerHp && await bot.telegram.sendMessage(chat_id, `Мощность: ${policy.powerHp} л.с.`)
                             policy.policyId && await bot.telegram.sendMessage(chat_id, `Полис: ${policy.policyId}`)

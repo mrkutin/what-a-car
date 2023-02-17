@@ -1,3 +1,5 @@
-const headersNoBody = ['row', 'policyId', 'company', 'status', 'policyTerm', 'makeAndModel', 'licensePlate', 'vin', 'powerHp', 'vehicleInTransit', 'trailerAllowed', 'usingPurpose', 'hasRestrictions', 'policyHolder', 'vehicleOwner', 'KBM', 'region', 'premium']
-const headersWithBody = ['row', 'policyId', 'company', 'status', 'policyTerm', 'makeAndModel', 'licensePlate', 'vin', 'body', 'powerHp', 'vehicleInTransit', 'trailerAllowed', 'usingPurpose', 'hasRestrictions', 'policyHolder', 'vehicleOwner', 'KBM', 'region', 'premium']
-export {headersNoBody, headersWithBody}
+const headersVin = ['row', 'policyId', 'company', 'status', 'policyTerm', 'makeAndModel', 'licensePlate', 'vin', 'powerHp', 'vehicleInTransit', 'trailerAllowed', 'usingPurpose', 'hasRestrictions', 'policyHolder', 'vehicleOwner', 'KBM', 'region', 'premium']
+const headersVinBody = ['row', 'policyId', 'company', 'status', 'policyTerm', 'makeAndModel', 'licensePlate', 'vin', 'body', 'powerHp', 'vehicleInTransit', 'trailerAllowed', 'usingPurpose', 'hasRestrictions', 'policyHolder', 'vehicleOwner', 'KBM', 'region', 'premium']
+const headersVinBodyChassis = ['row', 'policyId', 'company', 'status', 'policyTerm', 'makeAndModel', 'licensePlate', 'vin', 'chassis', 'body', 'powerHp', 'vehicleInTransit', 'trailerAllowed', 'usingPurpose', 'hasRestrictions', 'policyHolder', 'vehicleOwner', 'KBM', 'region', 'premium']
+
+export {headersVin, headersVinBody, headersVinBodyChassis}

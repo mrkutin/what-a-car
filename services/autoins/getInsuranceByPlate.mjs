@@ -12,7 +12,7 @@ import AnonymizePlugin from 'puppeteer-extra-plugin-anonymize-ua'
 
 puppeteer.use(AnonymizePlugin())
 
-import {headersNoBody, headersWithBody} from './headers.mjs'
+import {headersVin, headersVinBody, headersVinBodyChassis} from './headers.mjs'
 
 const split = (arr, size) => arr.reduce(
     (acc, e, i) => {
@@ -55,7 +55,14 @@ const getInsuranceByPlate = async (plate) => {
     const res = []
     const chunks = split(texts, 15)
     for (const chunk of chunks){
-        const headers = chunk[5].includes('Номер кузова') ? headersWithBody : headersNoBody
+        let headers
+        if(chunk[5].includes('VIN') && chunk[5].includes('Номер кузова') && chunk[5].includes('Номер шасси')){
+            headers = headersVinBodyChassis
+        } else if (chunk[5].includes('VIN') && chunk[5].includes('Номер кузова')){
+            headers = headersVinBody
+        } else {
+            headers = headersVin
+        }
 
         const flattenedTexts = chunk.map(el => el.split('\n').map(el => {
             const split = el.split('\t')
