@@ -51,19 +51,25 @@ services:
     environment:
       REDIS_HOST: redis://redis:6379
       REDIS_EXPIRATION_SEC: 604800
-  gibdd-captcha-solver-redis:
+    deploy:
+      mode: replicated
+      replicas: 2
+  gibdd-captcha-solver:
     depends_on:
       - redis
     build:
       context: ./services/gibdd-captcha-solver/
-    image: itlaboratory/what-a-car-gibdd-captcha-solver-redis
+    image: itlaboratory/what-a-car-gibdd-captcha-solver
     restart: on-failure
     environment:
       REDIS_HOSTNAME: redis
       REDIS_PORT: 6379
+    deploy:
+      mode: replicated
+      replicas: 6
   gibdd-history:
     depends_on:
-      - gibdd-captcha-solver-redis
+      - gibdd-captcha-solver
       - redis
     build:
       context: ./services/gibdd/history/
@@ -75,7 +81,7 @@ services:
       DEBOUCE_INTERVAL_MS: 60000
   gibdd-accidents:
     depends_on:
-      - gibdd-captcha-solver-redis
+      - gibdd-captcha-solver
       - redis
     build:
       context: ./services/gibdd/accidents/
@@ -87,7 +93,7 @@ services:
       DEBOUCE_INTERVAL_MS: 60000
   gibdd-diagnostic-cards:
     depends_on:
-      - gibdd-captcha-solver-redis
+      - gibdd-captcha-solver
       - redis
     build:
       context: ./services/gibdd/diagnosticCards/
@@ -99,7 +105,7 @@ services:
       DEBOUCE_INTERVAL_MS: 60000
   gibdd-fines:
     depends_on:
-      - gibdd-captcha-solver-redis
+      - gibdd-captcha-solver
       - redis
     build:
       context: ./services/gibdd/fines/
@@ -111,7 +117,7 @@ services:
       DEBOUCE_INTERVAL_MS: 60000
   gibdd-restrictions:
     depends_on:
-      - gibdd-captcha-solver-redis
+      - gibdd-captcha-solver
       - redis
     build:
       context: ./services/gibdd/restrictions/
@@ -123,7 +129,7 @@ services:
       DEBOUCE_INTERVAL_MS: 60000
   gibdd-wanted:
     depends_on:
-      - gibdd-captcha-solver-redis
+      - gibdd-captcha-solver
       - redis
     build:
       context: ./services/gibdd/wanted/
