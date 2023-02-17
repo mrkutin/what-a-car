@@ -58,6 +58,9 @@ def get_data(redis_connection):
             )
             if resp:
                 stream, messages = resp[0]
+
+                print(stream)
+
                 last_id, data = messages[0]
 
                 # token = str.encode(data[b'key'].decode('utf8').split(':')[1])
@@ -71,16 +74,22 @@ def get_data(redis_connection):
 
                 if stream == b'stream:captcha:accidents:requested':
                     redis_connection.xadd('stream:captcha:accidents:resolved', output_data)
+                    print('stream:captcha:accidents:resolved')
                 if stream == b'stream:captcha:diagnostic-cards:requested':
                     redis_connection.xadd('stream:captcha:diagnostic-cards:resolved', output_data)
+                    print('stream:captcha:diagnostic-cards:resolved')
                 if stream == b'stream:captcha:fines:requested':
                     redis_connection.xadd('stream:captcha:fines:resolved', output_data)
+                    print('stream:captcha:fines:resolved')
                 if stream == b'stream:captcha:history:requested':
                     redis_connection.xadd('stream:captcha:history:resolved', output_data)
+                    print('stream:captcha:history:resolved')
                 if stream == b'stream:captcha:restrictions:requested':
                     redis_connection.xadd('stream:captcha:restrictions:resolved', output_data)
+                    print('stream:captcha:restrictions:resolved')
                 if stream == b'stream:captcha:wanted:requested':
                     redis_connection.xadd('stream:captcha:wanted:resolved', output_data)
+                    print('stream:captcha:wanted:resolved')
 
         except exceptions.ResponseError as e:
             print(e)

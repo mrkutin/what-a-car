@@ -75,6 +75,7 @@ async function listenForMessages(/*lastId = '$'*/) {
                     })
                     if (idx === -1) {
                         await redisPub.xadd('stream:gibdd:restrictions:resolved', '*', 'key', key, 'chat_id', chat_id, 'plate', plate)
+                        console.log('stream:gibdd:restrictions:resolved', '*', 'key', key, 'chat_id', chat_id, 'plate', plate)
                     }
                 } else {
                     //debounce
@@ -88,6 +89,7 @@ async function listenForMessages(/*lastId = '$'*/) {
                         let captchaKey = `captcha:${captchaToken}`
                         await redisPub.set(captchaKey, base64jpg, 'EX', 60)
                         await redisPub.xadd('stream:captcha:restrictions:requested', '*', 'key', captchaKey, 'token', captchaToken, 'vin', vin, 'chat_id', chat_id, 'plate', plate)
+                        console.log('stream:captcha:restrictions:requested', '*', 'key', captchaKey, 'token', captchaToken, 'vin', vin, 'chat_id', chat_id, 'plate', plate)
                     }
                 }
             }
@@ -105,8 +107,10 @@ async function listenForMessages(/*lastId = '$'*/) {
             const key = `gibdd:restrictions:${vin}`
             const res = await getRestrictionsByVin({captchaToken, captchaWord, vin})
             await redisPub.call('JSON.SET', key, '$', JSON.stringify(res))
+            console.log('JSON.SET', key, '$', JSON.stringify(res))
             await redisPub.expire(key, REDIS_EXPIRATION_SEC)
             await redisPub.xadd('stream:gibdd:restrictions:resolved', '*', 'key', key, 'chat_id', chat_id, 'plate', plate)
+            console.log('stream:gibdd:restrictions:resolved', '*', 'key', key, 'chat_id', chat_id, 'plate', plate)
         }
     }
 
