@@ -19,7 +19,8 @@ const getInsuranceByPlate = async plate => {
     return null
 }
 
-await getInsuranceByPlate('Е552МВ790')
+// await getInsuranceByPlate('А837АХ797')
+await getInsuranceByPlate('о957сх799')
 // await getInsuranceByPlate('М121АХ750')
 
 export {getInsuranceByPlate}
