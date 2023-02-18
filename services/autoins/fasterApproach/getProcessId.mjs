@@ -1,4 +1,5 @@
-const PROXY = process.env.PROXY || 'socks5://190.2.155.30:21551'
+const PROXY = process.env.PROXY || 'socks5://185.132.177.55:32859' // STATIC!!!
+// const PROXY = process.env.PROXY || 'socks5://190.2.155.30:21551' // DYNAMIC!!!
 
 import querystring from 'node:querystring'
 import moment from 'moment'
@@ -10,8 +11,7 @@ import StealthPlugin from 'puppeteer-extra-plugin-stealth'
 
 puppeteer.use(StealthPlugin())
 
-import AnonymizePlugin from 'puppeteer-extra-plugin-anonymize-ua'
-
+// import AnonymizePlugin from 'puppeteer-extra-plugin-anonymize-ua'
 //puppeteer.use(AnonymizePlugin())
 
 const browser = await puppeteer.launch({
@@ -20,7 +20,7 @@ const browser = await puppeteer.launch({
     defaultViewport: {
         width: 1920, height: 1080
     },
-    args: ['--no-sandbox', '--disable-setuid-sandbox', '--proxy-server=socks5://190.2.155.30:21551']
+    args: ['--no-sandbox', '--disable-setuid-sandbox', `--proxy-server=${PROXY}`]
 })
 
 const page = await browser.newPage()
@@ -46,7 +46,7 @@ const getProcessId = async plate => {
         })
         setTimeout(() => {
             reject(new Error(`/api/autoInfo waiting timeout for ${plate}`))
-        }, 20000)
+        }, 30000)//todo
     })
 
     const encodedPlate = querystring.encode({licensePlate: plate})

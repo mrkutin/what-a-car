@@ -1,1 +1,0 @@
-export default ['row', 'policyId', 'company', 'status', 'policyTerm', 'makeAndModel', 'licensePlate', 'vin', 'powerHp', 'vehicleInTransit', 'trailerAllowed', 'usingPurpose', 'hasRestrictions', 'policyHolder', 'vehicleOwner', 'KBM', 'region', 'premium']

@@ -1,8 +1,13 @@
+const PROXY = process.env.PROXY || 'socks5://185.132.177.55:32859' // STATIC!!!
+
 import axios from 'axios'
+import {SocksProxyAgent} from 'socks-proxy-agent'
+const httpsAgent = new SocksProxyAgent(PROXY)
 
 const waitForProcess = async (processId, cookies, count = 5) => {
     try {
         const res = await axios.get(`https://dkbm-web.autoins.ru/dkbm-web-1.0/checkPolicyInfoStatus.htm?processId=${processId}`, {
+            httpsAgent,
             headers: {
                 Cookie: cookies.map(cookie => `${cookie.name}=${cookie.value}`).join(';')
             }
