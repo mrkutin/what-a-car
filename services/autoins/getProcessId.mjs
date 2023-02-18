@@ -11,8 +11,8 @@ import StealthPlugin from 'puppeteer-extra-plugin-stealth'
 
 puppeteer.use(StealthPlugin())
 
-// import AnonymizePlugin from 'puppeteer-extra-plugin-anonymize-ua'
-//puppeteer.use(AnonymizePlugin())
+import AnonymizePlugin from 'puppeteer-extra-plugin-anonymize-ua'
+puppeteer.use(AnonymizePlugin())
 
 const browser = await puppeteer.launch({
     headless: true,
@@ -45,9 +45,6 @@ const getProcessId = async plate => {
                 resolve(json.processId)
             }
         })
-        setTimeout(() => {
-            reject(new Error(`/api/autoInfo waiting timeout for ${plate}`))
-        }, 30000)//todo
     })
 
     const encodedPlate = querystring.encode({licensePlate: plate})
