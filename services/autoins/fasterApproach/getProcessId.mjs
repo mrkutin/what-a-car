@@ -1,5 +1,5 @@
-// const PROXY = process.env.PROXY || 'socks5://185.132.177.55:32859' // STATIC!!!
-const PROXY = process.env.PROXY || 'socks5://190.2.155.30:21551' // DYNAMIC!!!
+const PROXY = process.env.PROXY || 'socks5://185.132.177.55:32859' // STATIC!!!
+// const PROXY = process.env.PROXY || 'socks5://190.2.155.30:21551' // DYNAMIC!!!
 
 import querystring from 'node:querystring'
 import moment from 'moment'
