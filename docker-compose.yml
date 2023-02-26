@@ -55,7 +55,7 @@ services:
       ATTEMPTS: 1
     deploy:
       mode: replicated
-      replicas: 1
+      replicas: 2
   gibdd-captcha-solver:
     depends_on:
       - redis

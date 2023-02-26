@@ -14,25 +14,25 @@ puppeteer.use(StealthPlugin())
 import AnonymizePlugin from 'puppeteer-extra-plugin-anonymize-ua'
 puppeteer.use(AnonymizePlugin())
 
-const browser = await puppeteer.launch({
-    headless: true,
-    executablePath: executablePath(),
-    defaultViewport: {
-        width: 1920, height: 1080
-    },
-    args: ['--no-sandbox', '--disable-setuid-sandbox', `--proxy-server=${PROXY}`]
-    // args: ['--no-sandbox', '--disable-setuid-sandbox']
-})
-
-const page = await browser.newPage()
-await page.goto('https://dkbm-web.autoins.ru/dkbm-web-1.0/policyInfo.htm',
-    //{waitUntil: 'domcontentloaded'}
-    {waitUntil: 'networkidle0'}
-)
-await page.waitForSelector('#tsBlockTab')
-await page.click('#tsBlockTab')
-
 const getProcessId = async plate => {
+    const browser = await puppeteer.launch({
+        headless: true,
+        executablePath: executablePath(),
+        defaultViewport: {
+            width: 1920, height: 1080
+        },
+        args: ['--no-sandbox', '--disable-setuid-sandbox', `--proxy-server=${PROXY}`]
+        // args: ['--no-sandbox', '--disable-setuid-sandbox']
+    })
+
+    const page = await browser.newPage()
+    await page.goto('https://dkbm-web.autoins.ru/dkbm-web-1.0/policyInfo.htm',
+        //{waitUntil: 'domcontentloaded'}
+        {waitUntil: 'networkidle0'}
+    )
+    await page.waitForSelector('#tsBlockTab')
+    await page.click('#tsBlockTab')
+
     const responsePromise = new Promise((resolve, reject) => {
         page.on('response', async (response) => {
             if (response.request().url().includes('policyInfo.htm')) {
@@ -97,6 +97,8 @@ const getProcessId = async plate => {
 
     const processId = await responsePromise
     const cookies = await page.cookies()
+
+    await browser.close()
 
     return {processId, cookies}
 }

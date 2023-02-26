@@ -19,12 +19,13 @@ const getInsuranceByPlate = async plate => {
     return null
 }
 
-setTimeout(() => {
-    throw new Error('Please, reboot me')
-}, Math.floor(Math.random() * 10*60*1000) + 50*60*1000) //50-60 min
+// setTimeout(() => {
+//     throw new Error('Please, reboot me')
+// }, Math.floor(Math.random() * 10*60*1000) + 50*60*1000) //50-60 min
 
 // await getInsuranceByPlate('А837АХ797')
 // await getInsuranceByPlate('о957сх799')
 // await getInsuranceByPlate('М121АХ750')
+// await getInsuranceByPlate('В194УС150')
 
 export {getInsuranceByPlate}
