@@ -52,7 +52,7 @@ services:
       REDIS_HOST: redis://redis:6379
       REDIS_EXPIRATION_SEC: 604800
       NAVIGATION_TIMEOUT_MS: 90000
-      ATTEMPTS: 1
+      ATTEMPTS: 2
     deploy:
       mode: replicated
       replicas: 2
