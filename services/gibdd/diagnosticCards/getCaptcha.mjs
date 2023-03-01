@@ -1,14 +1,14 @@
-const PROXY = process.env.PROXY || 'socks5://185.132.177.55:32859'// STATIC!!!
+// const PROXY = process.env.PROXY || 'socks5://185.132.177.55:32859'// STATIC!!!
 
 import axios from 'axios'
 import UserAgent from 'user-agents'
-import {SocksProxyAgent} from 'socks-proxy-agent'
-const httpsAgent = new SocksProxyAgent(PROXY)
 const userAgentData = new UserAgent().data
+// import {SocksProxyAgent} from 'socks-proxy-agent'
+// const httpsAgent = new SocksProxyAgent(PROXY)
 
 const getCaptcha = async () => {
     const getCaptchaRes = await axios.get('https://check.gibdd.ru/captcha', {
-        httpsAgent,
+        //httpsAgent,
         headers: {
             'Accept': '*/*',
             'Accept-Encoding': 'gzip, deflate, br',

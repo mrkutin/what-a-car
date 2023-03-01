@@ -1,4 +1,4 @@
-const PROXY = process.env.PROXY || 'socks5://190.2.155.30:21551'//dynamic
+// const PROXY = process.env.PROXY || 'socks5://190.2.155.30:21551'//dynamic
 const NAVIGATION_TIMEOUT_MS = 60000
 
 const COOKIES_FILE = './cookies.json'
@@ -29,7 +29,8 @@ const getEstimateByPlate = async plate => {
         defaultViewport: {
             width: 1920, height: 1080
         },
-        args: ['--no-sandbox', '--disable-setuid-sandbox', `--proxy-server=${PROXY}`]
+        args: ['--no-sandbox', '--disable-setuid-sandbox']
+        // args: ['--no-sandbox', '--disable-setuid-sandbox', `--proxy-server=${PROXY}`]
     })
 
     const page = await browser.newPage()

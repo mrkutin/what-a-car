@@ -1,9 +1,9 @@
-const PROXY = process.env.PROXY || 'socks5://185.132.177.55:32859'// STATIC!!!
+// const PROXY = process.env.PROXY || 'socks5://185.132.177.55:32859'// STATIC!!!
 
 import axios from 'axios'
 import UserAgent from 'user-agents'
-import {SocksProxyAgent} from 'socks-proxy-agent'
-const httpsAgent = new SocksProxyAgent(PROXY)
+// import {SocksProxyAgent} from 'socks-proxy-agent'
+// const httpsAgent = new SocksProxyAgent(PROXY)
 
 
 const getDiagnosticCardsByVin = async ({captchaToken, captchaWord, vin}) => {
@@ -17,7 +17,7 @@ const getDiagnosticCardsByVin = async ({captchaToken, captchaWord, vin}) => {
         captchaToken,
         captchaWord
     }, {
-        httpsAgent,
+        //httpsAgent,
         headers: {
             'Accept': 'application/json, text/javascript, */*; q=0.01',
             'Accept-Encoding': 'gzip, deflate, br',

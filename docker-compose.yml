@@ -41,21 +41,6 @@ services:
     environment:
       REDIS_HOST: redis://redis:6379
       REDIS_EXPIRATION_SEC: 604800
-  autoins:
-    depends_on:
-      - redis
-    build:
-      context: services/autoins/
-    image: itlaboratory/what-a-car-autoins
-    restart: on-failure
-    environment:
-      REDIS_HOST: redis://redis:6379
-      REDIS_EXPIRATION_SEC: 604800
-      NAVIGATION_TIMEOUT_MS: 90000
-      ATTEMPTS: 2
-    deploy:
-      mode: replicated
-      replicas: 2
   gibdd-captcha-solver:
     depends_on:
       - redis
@@ -68,7 +53,7 @@ services:
       REDIS_PORT: 6379
     deploy:
       mode: replicated
-      replicas: 6
+      replicas: 1
   gibdd-history:
     depends_on:
       - gibdd-captcha-solver
@@ -183,6 +168,21 @@ services:
       ME_CONFIG_MONGODB_ADMINUSERNAME: root
       ME_CONFIG_MONGODB_ADMINPASSWORD: root
       ME_CONFIG_MONGODB_URL: mongodb://root:root@mongo:27017/
+#  autoins:
+#    depends_on:
+#      - redis
+#    build:
+#      context: services/autoins/
+#    image: itlaboratory/what-a-car-autoins
+#    restart: on-failure
+#    environment:
+#      REDIS_HOST: redis://redis:6379
+#      REDIS_EXPIRATION_SEC: 604800
+#      NAVIGATION_TIMEOUT_MS: 90000
+#      ATTEMPTS: 2
+#    deploy:
+#      mode: replicated
+#      replicas: 2
 volumes:
   redis-data:
   mongo-data:

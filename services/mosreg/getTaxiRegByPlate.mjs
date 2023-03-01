@@ -27,7 +27,8 @@ const getTaxiRegByPlate = async plate => {
         defaultViewport: {
             width: 1920, height: 1080
         },
-        args: ['--no-sandbox', '--disable-setuid-sandbox', `--proxy-server=${PROXY}`]
+        args: ['--no-sandbox', '--disable-setuid-sandbox']
+        // args: ['--no-sandbox', '--disable-setuid-sandbox', `--proxy-server=${PROXY}`]
     })
     const page = await browser.newPage()
 
