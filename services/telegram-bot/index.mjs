@@ -43,11 +43,6 @@ try {
     console.log('Group "telegram" already exists in stream:sravni:resolved, skipping')
 }
 try {
-    await redisSub.xgroup('CREATE', 'stream:autoins:resolved', 'telegram', '$', 'MKSTREAM')
-} catch (e) {
-    console.log('Group "telegram" already exists in stream:autoins:resolved, skipping')
-}
-try {
     await redisSub.xgroup('CREATE', 'stream:ingos:resolved', 'telegram', '$', 'MKSTREAM')
 } catch (e) {
     console.log('Group "telegram" already exists in stream:ingos:resolved, skipping')
@@ -242,7 +237,6 @@ async function listenForMessages() {
         100,
         'STREAMS',
         'stream:sravni:resolved',
-        'stream:autoins:resolved',
         'stream:ingos:resolved',
         'stream:mosreg:resolved',
         'stream:gibdd:history:resolved',
@@ -251,7 +245,6 @@ async function listenForMessages() {
         'stream:gibdd:diagnostic-cards:resolved',
         'stream:gibdd:wanted:resolved',
         'stream:gibdd:fines:resolved',
-        '>',
         '>',
         '>',
         '>',
@@ -286,32 +279,32 @@ async function listenForMessages() {
                         // await bot.telegram.sendMessage(chat_id, `VIN: ${serviceObj?.vin}`)
                     }
                     break
-                case 'autoins':
-                    await bot.telegram.sendMessage(chat_id, '<b>ПОЛИСЫ ОСАГО</b>', {parse_mode: 'HTML'})
-                    if (serviceObj?.length) {
-                        await bot.telegram.sendMessage(chat_id, `(Всего <b>${serviceObj.length}</b>)`, {parse_mode: 'HTML'})
-                        for (const policy of serviceObj) {
-                            policy.licensePlate && await bot.telegram.sendMessage(chat_id, `Номер: ${policy.licensePlate}`)
-                            policy.vin && await bot.telegram.sendMessage(chat_id, `VIN: ${policy.vin}`)
-                            policy.body && await bot.telegram.sendMessage(chat_id, `Номер кузова: ${policy.body}`)
-                            policy.chassis && await bot.telegram.sendMessage(chat_id, `Номер шасси: ${policy.chassis}`)
-                            policy.makeAndModel && await bot.telegram.sendMessage(chat_id, `Автомобиль: ${policy.makeAndModel}`)
-                            policy.powerHp && await bot.telegram.sendMessage(chat_id, `Мощность: ${policy.powerHp} л.с.`)
-                            policy.policyId && await bot.telegram.sendMessage(chat_id, `Полис: ${policy.policyId}`)
-                            policy.company && await bot.telegram.sendMessage(chat_id, `Компания: ${policy.company}`)
-                            policy.status && await bot.telegram.sendMessage(chat_id, `Статус: ${policy.status}`)
-                            policy.usingPurpose && await bot.telegram.sendMessage(chat_id, `Цель использования: ${policy.usingPurpose}`)
-                            policy.hasRestrictions && await bot.telegram.sendMessage(chat_id, `${policy.hasRestrictions}`)
-                            policy.vehicleOwner && await bot.telegram.sendMessage(chat_id, `Собственник: ${policy.vehicleOwner}`)
-                            policy.policyHolder && await bot.telegram.sendMessage(chat_id, `Страхователь: ${policy.policyHolder}`)
-                            policy.KBM && await bot.telegram.sendMessage(chat_id, `КБМ: ${policy.KBM}`)
-                            policy.region && await bot.telegram.sendMessage(chat_id, `Регион: ${policy.region}`)
-                            policy.premium && await bot.telegram.sendMessage(chat_id, `Страховая премия: ${policy.premium}`)
-                        }
-                    } else {
-                        await bot.telegram.sendMessage(chat_id, 'не обнаружены')
-                    }
-                    break
+                // case 'autoins':
+                //     await bot.telegram.sendMessage(chat_id, '<b>ПОЛИСЫ ОСАГО</b>', {parse_mode: 'HTML'})
+                //     if (serviceObj?.length) {
+                //         await bot.telegram.sendMessage(chat_id, `(Всего <b>${serviceObj.length}</b>)`, {parse_mode: 'HTML'})
+                //         for (const policy of serviceObj) {
+                //             policy.licensePlate && await bot.telegram.sendMessage(chat_id, `Номер: ${policy.licensePlate}`)
+                //             policy.vin && await bot.telegram.sendMessage(chat_id, `VIN: ${policy.vin}`)
+                //             policy.body && await bot.telegram.sendMessage(chat_id, `Номер кузова: ${policy.body}`)
+                //             policy.chassis && await bot.telegram.sendMessage(chat_id, `Номер шасси: ${policy.chassis}`)
+                //             policy.makeAndModel && await bot.telegram.sendMessage(chat_id, `Автомобиль: ${policy.makeAndModel}`)
+                //             policy.powerHp && await bot.telegram.sendMessage(chat_id, `Мощность: ${policy.powerHp} л.с.`)
+                //             policy.policyId && await bot.telegram.sendMessage(chat_id, `Полис: ${policy.policyId}`)
+                //             policy.company && await bot.telegram.sendMessage(chat_id, `Компания: ${policy.company}`)
+                //             policy.status && await bot.telegram.sendMessage(chat_id, `Статус: ${policy.status}`)
+                //             policy.usingPurpose && await bot.telegram.sendMessage(chat_id, `Цель использования: ${policy.usingPurpose}`)
+                //             policy.hasRestrictions && await bot.telegram.sendMessage(chat_id, `${policy.hasRestrictions}`)
+                //             policy.vehicleOwner && await bot.telegram.sendMessage(chat_id, `Собственник: ${policy.vehicleOwner}`)
+                //             policy.policyHolder && await bot.telegram.sendMessage(chat_id, `Страхователь: ${policy.policyHolder}`)
+                //             policy.KBM && await bot.telegram.sendMessage(chat_id, `КБМ: ${policy.KBM}`)
+                //             policy.region && await bot.telegram.sendMessage(chat_id, `Регион: ${policy.region}`)
+                //             policy.premium && await bot.telegram.sendMessage(chat_id, `Страховая премия: ${policy.premium}`)
+                //         }
+                //     } else {
+                //         await bot.telegram.sendMessage(chat_id, 'не обнаружены')
+                //     }
+                //     break
                 case 'gibdd:history':
                     if (serviceObj?.vehicle) {
                         await bot.telegram.sendMessage(chat_id, '<b>АВТОМОБИЛЬ</b>', {parse_mode: 'HTML'})

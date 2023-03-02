@@ -53,7 +53,7 @@ services:
       REDIS_PORT: 6379
     deploy:
       mode: replicated
-      replicas: 1
+      replicas: 5
   gibdd-history:
     depends_on:
       - gibdd-captcha-solver

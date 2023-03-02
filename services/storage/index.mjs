@@ -18,11 +18,6 @@ const redisPub = new Redis(REDIS_HOST)
 const redisSub = new Redis(REDIS_HOST)
 
 try {
-    await redisSub.xgroup('CREATE', 'stream:autoins:resolved', 'storage', '$', 'MKSTREAM')
-} catch (e) {
-    console.log('Group "storage" already exists in stream:autoins:resolved, skipping')
-}
-try {
     await redisSub.xgroup('CREATE', 'stream:gibdd:accidents:resolved', 'storage', '$', 'MKSTREAM')
 } catch (e) {
     console.log('Group "storage" already exists in stream:gibdd:accidents:resolved, skipping')
@@ -103,10 +98,6 @@ async function listenForMessages() {
         'COUNT',
         10,
         'STREAMS',
-        // 'stream:sravni:resolved',
-        // 'stream:autoins:resolved',
-        // 'stream:gibdd:resolved',
-        // 'stream:fines:resolved',
         'stream:plate:requested',
         '>'
     )
@@ -138,7 +129,6 @@ async function listenForMessages() {
         'COUNT',
         10,
         'STREAMS',
-        'stream:autoins:resolved',
         'stream:gibdd:accidents:resolved',
         'stream:gibdd:diagnostic-cards:resolved',
         'stream:gibdd:fines:resolved',
@@ -147,7 +137,6 @@ async function listenForMessages() {
         'stream:gibdd:wanted:resolved',
         'stream:ingos:resolved',
         'stream:sravni:resolved',
-        '>',
         '>',
         '>',
         '>',
