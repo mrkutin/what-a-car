@@ -196,7 +196,7 @@ bot.on(message('text'), async ctx => {
     }
 
     if (!ADMIN_IDS.includes(id)) {
-        await bot.telegram.sendMessage(ADMIN_IDS[0], `Пользователь: ${id} ${username} ${first_name} ${last_name} сделал запрос: ${text}`)
+        await bot.telegram.sendMessage(ADMIN_IDS[0], `Пользователь: ${id} ${username} ${first_name || ''} ${last_name || ''} сделал запрос: ${text}`)
     }
 
     const textInCaps = text.toUpperCase()
