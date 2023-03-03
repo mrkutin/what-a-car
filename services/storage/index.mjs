@@ -7,8 +7,13 @@ import {MongoClient} from 'mongodb'
 const mongoClient = new MongoClient(MONGO_HOST)
 await mongoClient.connect()
 const mongoDb = mongoClient.db('what-a-car')
+
 const plates = mongoDb.collection('plates')
 await plates.createIndex({plate: 1})
+
+const vins = mongoDb.collection('vins')
+await vins.createIndex({vin: 1})
+
 const chats = mongoDb.collection('chats')
 await chats.createIndex({chat_id: 1})
 
@@ -154,30 +159,50 @@ async function listenForMessages() {
             }, [])
 
         for (const message of flatMessagesResolved) {
-            const {key, chat_id, plate} = flatArrayToObject(message[1])
+            const {key, chat_id, plate, vin} = flatArrayToObject(message[1])
 
             const keyParts = key.split(':')
             const service = keyParts.length > 2 ? `${keyParts[0]}:${keyParts[1]}` : keyParts[0]
 
             let serviceObj = JSON.parse(await redisPub.call('JSON.GET', key))
 
-            const foundResult = await plates.findOne({plate})
-            const now = new Date()
+            if(plate){
+                const foundResult = await plates.findOne({plate})
+                const now = new Date()
 
-            if (!foundResult) {
-                await plates.insertOne({plate, chats: [parseInt(chat_id)], services: {[service]: {...serviceObj, updatedAt: now}}, createdBy: now})
-            } else {
-                await plates.updateOne({plate}, {
-                    $addToSet: {
-                        chats: parseInt(chat_id)
-                    },
-                    $set: {
-                        [`services.${service}`]: {...serviceObj, updatedAt: now},
-                        updatedAt: now
-                    }
-                })
+                if (!foundResult) {
+                    await plates.insertOne({plate, chats: [parseInt(chat_id)], services: {[service]: {...serviceObj, updatedAt: now}}, createdBy: now})
+                } else {
+                    await plates.updateOne({plate}, {
+                        $addToSet: {
+                            chats: parseInt(chat_id)
+                        },
+                        $set: {
+                            [`services.${service}`]: {...serviceObj, updatedAt: now},
+                            updatedAt: now
+                        }
+                    })
+                }
+                console.log({[service]: serviceObj, plate})
+            } else if (vin){
+                const foundResult = await vins.findOne({vin})
+                const now = new Date()
+
+                if (!foundResult) {
+                    await vins.insertOne({vin, chats: [parseInt(chat_id)], services: {[service]: {...serviceObj, updatedAt: now}}, createdBy: now})
+                } else {
+                    await vins.updateOne({vin}, {
+                        $addToSet: {
+                            chats: parseInt(chat_id)
+                        },
+                        $set: {
+                            [`services.${service}`]: {...serviceObj, updatedAt: now},
+                            updatedAt: now
+                        }
+                    })
+                }
+                console.log({[service]: serviceObj, vin})
             }
-            console.log({[service]: serviceObj, plate})
         }
     }
 

@@ -74,8 +74,7 @@ async function listenForMessages(/*lastId = '$'*/) {
                         return key === history_key && chat_id === history_chat_id
                     })
                     if (idx === -1) {
-                        await redisPub.xadd('stream:gibdd:restrictions:resolved', '*', 'key', key, 'chat_id', chat_id, 'plate', plate)
-                        console.log('stream:gibdd:restrictions:resolved', '*', 'key', key, 'chat_id', chat_id, 'plate', plate)
+                        await redisPub.xadd('stream:gibdd:restrictions:resolved', '*', 'key', key, 'chat_id', chat_id, 'plate', plate, 'vin', vin)
                     }
                 } else {
                     //debounce
@@ -110,7 +109,7 @@ async function listenForMessages(/*lastId = '$'*/) {
             console.log('JSON.SET', key, '$', JSON.stringify(res))
             await redisPub.expire(key, REDIS_EXPIRATION_SEC)
             await redisPub.xadd('stream:gibdd:restrictions:resolved', '*', 'key', key, 'chat_id', chat_id, 'plate', plate)
-            console.log('stream:gibdd:restrictions:resolved', '*', 'key', key, 'chat_id', chat_id, 'plate', plate)
+            console.log('stream:gibdd:restrictions:resolved', '*', 'key', key, 'chat_id', chat_id, 'plate', plate, 'vin', vin)
         }
     }
 

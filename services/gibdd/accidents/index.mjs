@@ -74,7 +74,7 @@ async function listenForMessages(/*lastId = '$'*/) {
                         return key === history_key && chat_id === history_chat_id
                     })
                     if (idx === -1) {
-                        await redisPub.xadd('stream:gibdd:accidents:resolved', '*', 'key', key, 'chat_id', chat_id, 'plate', plate)
+                        await redisPub.xadd('stream:gibdd:accidents:resolved', '*', 'key', key, 'chat_id', chat_id, 'plate', plate, 'vin', vin)
                     }
                 } else {
                     //debounce
@@ -106,7 +106,7 @@ async function listenForMessages(/*lastId = '$'*/) {
             const res = await getAccidentsByVin({captchaToken, captchaWord, vin})
             await redisPub.call('JSON.SET', key, '$', JSON.stringify(res))
             await redisPub.expire(key, REDIS_EXPIRATION_SEC)
-            await redisPub.xadd('stream:gibdd:accidents:resolved', '*', 'key', key, 'chat_id', chat_id, 'plate', plate)
+            await redisPub.xadd('stream:gibdd:accidents:resolved', '*', 'key', key, 'chat_id', chat_id, 'plate', plate, 'vin', vin)
         }
     }
 
