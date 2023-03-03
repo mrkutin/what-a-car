@@ -97,7 +97,7 @@ const flatArrayToObject = arr => {
     return obj
 }
 
-bot.start((ctx) => ctx.reply('Привет, это бот "Что за тачка?"\nДля проверки тачки отправь её номер'))
+bot.start((ctx) => ctx.reply('Привет, это бот "Что за тачка?"\nДля проверки тачки отправьте её гос. номер (полностью, с кодом региона, без пробелов) или VIN'))
 
 bot.command('unblock', async ctx => {
     if (!ADMIN_IDS.includes(ctx.update.message.from.id)) {
@@ -212,10 +212,10 @@ bot.on(message('text'), async ctx => {
         // || plate.match(/^Т[АВЕКМНОРСТУХ]{2}\d{3}(?<!000)\d{2,3}$/ui) //выездной
     ) {
         await redisPub.xadd('stream:plate:requested', '*', 'plate', plate, 'chat_id', chat_id, 'user_id', id, 'user_name', username, 'user_first_name', first_name, 'user_last_name', last_name, 'user_language_code', language_code)
-
     } else if (vin.match(/^[A-Z0-9]{17}$/g)) {
+        await redisPub.xadd('stream:vin:resolved', '*', 'vin', vin, 'chat_id', chat_id, 'user_id', id, 'user_name', username, 'user_first_name', first_name, 'user_last_name', last_name, 'user_language_code', language_code)
     } else {
-        ctx.reply('Это не похоже на номер')
+        ctx.reply('Это не похоже ни на гос. номер, ни на VIN. Попробуйте еще раз.')
     }
 })
 
